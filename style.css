@@ -1225,3 +1225,314 @@ pre[class*="language-"] {
     .sidebar { width: 400px; }
     .readme-viewer, .orchestrator-view { max-width: 1200px; }
 }
+
+/* ==========================================================================
+   Advanced Features: Scroll Mapping, Inbuilt Editor, Code Search, Ecosystem
+   ========================================================================== */
+
+/* Top Scroll Percentage Progress Bar */
+.scroll-progress-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--primary), #38bdf8, #a855f7);
+    z-index: 2000;
+    transition: width 0.08s ease-out;
+    box-shadow: 0 0 8px var(--primary-glow);
+}
+
+/* Inbuilt Code Editor */
+.code-editor-pane {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 500px;
+    background: #090d16;
+}
+
+.editor-status-bar {
+    background: var(--bg-surface-secondary);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.editor-status-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.editor-badge {
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 700;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.editor-badge.editable {
+    background: var(--success-bg);
+    color: var(--success);
+}
+.editor-badge.readonly {
+    background: var(--danger-bg);
+    color: var(--danger);
+}
+
+.editor-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.editor-textarea {
+    flex: 1;
+    width: 100%;
+    min-height: 440px;
+    padding: 16px;
+    background: #060911;
+    color: #e2e8f0;
+    border: none;
+    font-family: var(--font-mono);
+    font-size: 0.88rem;
+    line-height: 1.6;
+    resize: vertical;
+    outline: none;
+    tab-size: 4;
+}
+
+.editor-readonly-notice {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px dashed var(--danger);
+    color: #fca5a5;
+    padding: 10px 14px;
+    font-size: 0.82rem;
+    border-radius: 6px;
+    margin: 10px 16px;
+}
+
+.btn-save-code {
+    background: var(--success);
+    color: white;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all var(--transition-fast);
+}
+.btn-save-code:hover { opacity: 0.9; transform: translateY(-1px); }
+
+.btn-restart-server {
+    background: linear-gradient(135deg, #f59e0b, #ef4444);
+    color: white;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all var(--transition-fast);
+}
+.btn-restart-server:hover { opacity: 0.9; transform: translateY(-1px); }
+
+.btn-github-link {
+    background: #1f2937;
+    color: #f3f4f6;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all var(--transition-fast);
+}
+.btn-github-link:hover {
+    background: #374151;
+    color: #60a5fa;
+    border-color: #60a5fa;
+}
+
+/* Code Search Panel in Sidebar */
+.code-search-pane {
+    padding: 8px 12px;
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--border);
+    max-height: 280px;
+    overflow-y: auto;
+}
+
+.code-search-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    font-weight: 700;
+}
+
+.code-match-item {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 10px;
+    margin-bottom: 6px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+.code-match-item:hover {
+    border-color: var(--primary);
+    background: var(--bg-surface-secondary);
+    transform: translateX(2px);
+}
+
+.code-match-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.72rem;
+    color: var(--primary);
+    font-weight: 700;
+    margin-bottom: 3px;
+}
+
+.code-match-file {
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+}
+
+.code-match-snippet {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--text-primary);
+    background: rgba(0, 0, 0, 0.3);
+    padding: 3px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Console Toolbar in Orchestrator */
+.console-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+.console-actions {
+    display: flex;
+    gap: 6px;
+}
+.btn-console {
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.72rem;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+.btn-console:hover {
+    color: var(--primary);
+    border-color: var(--primary);
+}
+
+/* Creator Ecosystem Navigation & Footer */
+.ecosystem-nav-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    cursor: pointer;
+    text-decoration: none;
+    transition: all var(--transition-fast);
+}
+.ecosystem-nav-pill:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.ecosystem-footer {
+    background: var(--bg-header);
+    border-top: 1px solid var(--border);
+    padding: 22px 20px;
+    margin-top: 30px;
+}
+.ecosystem-footer-title {
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.ecosystem-footer-subtitle {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+}
+.ecosystem-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+}
+.ecosystem-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    transition: all var(--transition-fast);
+}
+.ecosystem-card:hover {
+    border-color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px var(--primary-glow);
+}
+.ecosystem-card-title {
+    font-weight: 700;
+    font-size: 0.86rem;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.ecosystem-card-desc {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}

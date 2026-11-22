@@ -309,6 +309,26 @@ function stopSubServer(progId) {
     });
 }
 
+// Function to restart a sub-server
+function restartSubServer(progId) {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const s = subServers[progId];
+            if (!s) return reject(new Error("Unknown server program ID: " + progId));
+            if (s.status === "running" && s.pid) {
+                appendLog(progId, "Initiating graceful server restart...");
+                await stopSubServer(progId);
+                // Pause for socket release
+                await new Promise(r => setTimeout(r, 800));
+            }
+            const res = await startSubServer(progId);
+            resolve(res);
+        } catch (err) {
+            reject(err);
+        }
+    });
+}
+
 // Helper: Recursively scan folder structure
 function getFolderTree(dirPath, relativeTo) {
     const items = fs.readdirSync(dirPath);
@@ -458,7 +478,118 @@ app.get("/api/programs/:id/file", (req, res) => {
     }
 });
 
-// 4. Sub-Servers Status List
+// 3b. Inbuilt File Editor Endpoint (Allows editing frontend assets & .env configurations)
+app.post("/api/programs/:id/file", (req, res) => {
+    const progId = req.params.id;
+    const { path: filePath, content } = req.body;
+
+    if (!filePath) {
+        return res.status(400).json({ success: false, message: "Parameter 'path' is required" });
+    }
+    if (content === undefined || content === null) {
+        return res.status(400).json({ success: false, message: "Parameter 'content' is required" });
+    }
+
+    const progDir = path.join(__dirname, progId);
+    const targetFile = path.resolve(progDir, filePath);
+
+    // Security: Ensure path does not escape program folder
+    if (!targetFile.startsWith(progDir)) {
+        return res.status(403).json({ success: false, message: "Access forbidden: Directory traversal attempt" });
+    }
+
+    const relativeToProg = path.relative(progDir, targetFile).replace(/\\/g, "/");
+    const ext = path.extname(targetFile).toLowerCase();
+    const fileName = path.basename(targetFile);
+
+    // Edit policy: Frontend assets (HTML, CSS, JSON, public JS) and .env are editable
+    const isEnv = fileName === ".env";
+    const isFrontendExt = [".html", ".css", ".json", ".txt", ".md", ".sql"].includes(ext);
+    const isPublicJs = ext === ".js" && (relativeToProg.startsWith("public/") || !subServers[progId]);
+    const isEditable = isEnv || isFrontendExt || isPublicJs;
+
+    if (!isEditable) {
+        return res.status(403).json({
+            success: false,
+            message: `Editing restricted for '${fileName}'. In accordance with academic guidelines, only Frontend assets (HTML, CSS, public JS, JSON, SQL) and .env configuration files are editable.`
+        });
+    }
+
+    try {
+        fs.writeFileSync(targetFile, content, "utf8");
+        appendLog(progId, `[EDITOR] File updated: ${relativeToProg} (${content.length} characters)`);
+        res.status(200).json({
+            success: true,
+            message: `File '${fileName}' saved successfully!`,
+            path: filePath,
+            bytes: Buffer.byteLength(content, "utf8")
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, message: `Failed to save file: ${err.message}` });
+    }
+});
+
+// 3c. Line-by-Line Code Search across all programs
+app.get("/api/search-code", (req, res) => {
+    const query = (req.query.q || "").trim();
+    if (!query || query.length < 2) {
+        return res.status(200).json({ success: true, count: 0, results: [] });
+    }
+
+    const results = [];
+    const lowerQ = query.toLowerCase();
+
+    PROGRAMS_METADATA.forEach(prog => {
+        const progDir = path.join(__dirname, prog.id);
+        if (!fs.existsSync(progDir)) return;
+
+        function scanDir(dir) {
+            try {
+                const entries = fs.readdirSync(dir, { withFileTypes: true });
+                for (const entry of entries) {
+                    if (entry.name === "node_modules" || entry.name === ".git") continue;
+                    const fullPath = path.join(dir, entry.name);
+                    if (entry.isDirectory()) {
+                        scanDir(fullPath);
+                    } else if (entry.isFile()) {
+                        const ext = path.extname(entry.name).toLowerCase();
+                        if ([".js", ".html", ".css", ".json", ".md", ".env", ".sql"].includes(ext) || entry.name === ".env") {
+                            try {
+                                const relPath = path.relative(progDir, fullPath).replace(/\\/g, "/");
+                                const fileContent = fs.readFileSync(fullPath, "utf8");
+                                const lines = fileContent.split("\n");
+                                lines.forEach((line, idx) => {
+                                    if (line.toLowerCase().includes(lowerQ)) {
+                                        results.push({
+                                            progId: prog.id,
+                                            progNum: prog.num,
+                                            progTitle: prog.title,
+                                            progType: prog.type,
+                                            file: relPath,
+                                            lineNum: idx + 1,
+                                            snippet: line.trim().slice(0, 160)
+                                        });
+                                    }
+                                });
+                            } catch (e) {}
+                        }
+                    }
+                }
+            } catch (e) {}
+        }
+
+        scanDir(progDir);
+    });
+
+    res.status(200).json({
+        success: true,
+        query,
+        count: results.length,
+        results: results.slice(0, 60)
+    });
+});
+
+// 4. Sub-Servers Status List (Includes live logs telemetry)
 app.get("/api/servers", (req, res) => {
     const list = Object.values(subServers).map(s => ({
         id: s.id,
@@ -468,7 +599,8 @@ app.get("/api/servers", (req, res) => {
         liveUrl: s.liveUrl,
         status: s.status,
         pid: s.pid,
-        startTime: s.startTime
+        startTime: s.startTime,
+        logs: s.logs || []
     }));
     res.status(200).json({ success: true, count: list.length, data: list });
 });
@@ -481,6 +613,25 @@ app.post("/api/servers/start/:id", async (req, res) => {
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
     }
+});
+
+// 5b. Restart a specific sub-server (Save & Restart workflow)
+app.post("/api/servers/restart/:id", async (req, res) => {
+    try {
+        const result = await restartSubServer(req.params.id);
+        res.status(200).json({ success: true, ...result });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// 5c. Clear logs for a specific sub-server
+app.post("/api/servers/clear-logs/:id", (req, res) => {
+    const s = subServers[req.params.id];
+    if (!s) return res.status(404).json({ success: false, message: "Server not found" });
+    s.logs = [];
+    appendLog(req.params.id, "Terminal logs cleared by user.");
+    res.status(200).json({ success: true, message: "Logs cleared", logs: s.logs });
 });
 
 // 6. Stop a specific sub-server

@@ -1,7 +1,8 @@
 // ==========================================================================
-// MDU Rohtak BCA Lab Portal - React 18 Single Page Application
-// Multi-Server Orchestrator, NLP-Level Search Engine, & Code Explorer
-// Touch Gesture & Multi-Device Mobile-Responsive Architecture
+// MDU Rohtak BCA Web Application Development Lab Portal
+// Full-Stack React 18 Single Page Application
+// Multi-Server Orchestrator, Line-by-Line Code Search, Inbuilt Code Editor,
+// IndexedDB & Cookie Persistence, Deep-Linking & Creator Ecosystem Integration
 // ==========================================================================
 
 const { useState, useEffect, useMemo, useRef, createElement: h } = window.React;
@@ -12,6 +13,48 @@ const THEMES = [
     { id: "academic-light", name: "Academic Light", icon: "☀️" },
     { id: "cyber-matrix", name: "Cyber Matrix", icon: "⚡" },
     { id: "solarized", name: "Solarized Warm", icon: "📜" }
+];
+
+// GitHub Repository Base URL
+const GITHUB_REPO_URL = "https://github.com/Akshat-881236/mdu-bca-web-development-lab";
+
+// Creator Ecosystem & Portfolio Projects
+const CREATOR_ECOSYSTEM = [
+    {
+        name: "Codagenda — AI Web IDE",
+        badge: "AI IDE",
+        desc: "Autonomous prompt-to-code development environment with real-time SSE streaming.",
+        url: "https://codagenda.akshatpsd2005.workers.dev/",
+        icon: "⚡"
+    },
+    {
+        name: "Akshat Network Hub",
+        badge: "Central Hub",
+        desc: "Unified developer portfolio, tools directory, and personal software showcase.",
+        url: "https://akshat-881236.github.io/AkshatNetworkHub/",
+        icon: "🌐"
+    },
+    {
+        name: "DPGNotes Academic Portal",
+        badge: "Student Hub",
+        desc: "Curriculum-aligned BCA study notes, practical guides, PYQs, and cover generator.",
+        url: "https://dpgnotes.web.app/",
+        icon: "🎓"
+    },
+    {
+        name: "TrackerJS Client Analytics",
+        badge: "Utility",
+        desc: "Lightweight client-side session analysis and user interaction tracing library.",
+        url: "https://akshat-881236.github.io/TrackerJS/",
+        icon: "📊"
+    },
+    {
+        name: "Akshat GitHub Profile",
+        badge: "Open Source",
+        desc: "Explore public repositories, web experiments, and lab practical manuals.",
+        url: "https://github.com/Akshat-881236",
+        icon: "🐙"
+    }
 ];
 
 // Synonym Dictionary for NLP Query Expansion
@@ -39,7 +82,7 @@ const NLP_SYNONYMS = {
     "menu": ["nav", "navbar", "dropdown", "hamburger", "drawer"]
 };
 
-// Common English Stop Words to Filter Out
+// Common English Stop Words
 const STOP_WORDS = new Set([
     "a", "an", "the", "in", "on", "at", "by", "for", "with", "about", "against",
     "between", "into", "through", "during", "before", "after", "above", "below",
@@ -47,6 +90,134 @@ const STOP_WORDS = new Set([
     "have", "has", "had", "do", "does", "did", "and", "but", "if", "or", "because",
     "as", "until", "while", "of", "it", "this", "that", "these", "those"
 ]);
+
+// --------------------------------------------------------------------------
+// Storage Manager: IndexedDB + Cookies + LocalStorage Bridge
+// --------------------------------------------------------------------------
+const StorageManager = {
+    DB_NAME: "MDULabPortalDB",
+    DB_VERSION: 1,
+    STORE_NAME: "preferences",
+
+    setCookie(name, value, days = 365) {
+        try {
+            const expires = new Date(Date.now() + days * 864e5).toUTCString();
+            document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax`;
+        } catch (e) {}
+    },
+
+    getCookie(name) {
+        try {
+            const match = document.cookie.match(new RegExp("(^| )" + name + "=([^;]+)"));
+            return match ? decodeURIComponent(match[2]) : null;
+        } catch (e) {
+            return null;
+        }
+    },
+
+    async openDB() {
+        if (!window.indexedDB) return null;
+        return new Promise((resolve) => {
+            try {
+                const req = window.indexedDB.open(this.DB_NAME, this.DB_VERSION);
+                req.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains(this.STORE_NAME)) {
+                        db.createObjectStore(this.STORE_NAME, { keyPath: "key" });
+                    }
+                };
+                req.onsuccess = (e) => resolve(e.target.result);
+                req.onerror = () => resolve(null);
+            } catch (e) {
+                resolve(null);
+            }
+        });
+    },
+
+    async getPref(key) {
+        // Try IndexedDB first
+        try {
+            const db = await this.openDB();
+            if (db) {
+                const val = await new Promise((resolve) => {
+                    const tx = db.transaction(this.STORE_NAME, "readonly");
+                    const store = tx.objectStore(this.STORE_NAME);
+                    const req = store.get(key);
+                    req.onsuccess = () => resolve(req.result ? req.result.val : null);
+                    req.onerror = () => resolve(null);
+                });
+                if (val !== null && val !== undefined) return val;
+            }
+        } catch (e) {}
+
+        // Fallback to Cookie
+        const cookieVal = this.getCookie(`mdu_${key}`);
+        if (cookieVal) return cookieVal;
+
+        // Fallback to LocalStorage
+        try {
+            return localStorage.getItem(`mdu_${key}`);
+        } catch (e) {
+            return null;
+        }
+    },
+
+    async setPref(key, val) {
+        // 1. Cookie
+        this.setCookie(`mdu_${key}`, typeof val === "object" ? JSON.stringify(val) : String(val));
+
+        // 2. LocalStorage
+        try {
+            localStorage.setItem(`mdu_${key}`, typeof val === "object" ? JSON.stringify(val) : String(val));
+        } catch (e) {}
+
+        // 3. IndexedDB
+        try {
+            const db = await this.openDB();
+            if (db) {
+                const tx = db.transaction(this.STORE_NAME, "readwrite");
+                const store = tx.objectStore(this.STORE_NAME);
+                store.put({ key, val, updatedAt: Date.now() });
+            }
+        } catch (e) {}
+    }
+};
+
+// --------------------------------------------------------------------------
+// URL Parameter Parser & Deep Linking Helper
+// --------------------------------------------------------------------------
+function getUrlParams() {
+    const params = new URLSearchParams(window.location.search);
+    const p = params.get("prog") || params.get("p");
+    let progId = null;
+    if (p) {
+        if (p.toLowerCase().startsWith("program-")) {
+            progId = p;
+        } else if (!isNaN(p)) {
+            progId = `Program-${p}`;
+        }
+    }
+    return {
+        prog: progId,
+        tab: params.get("tab") || params.get("t"),
+        file: params.get("file") || params.get("f"),
+        q: params.get("q") || params.get("search"),
+        theme: params.get("theme")
+    };
+}
+
+function syncUrlParams({ prog, tab, file, q }) {
+    try {
+        const url = new URL(window.location.href);
+        if (prog) url.searchParams.set("prog", prog);
+        if (tab) url.searchParams.set("tab", tab);
+        if (file) url.searchParams.set("file", file);
+        else url.searchParams.delete("file");
+        if (q && q.trim().length > 0) url.searchParams.set("q", q.trim());
+        else url.searchParams.delete("q");
+        window.history.replaceState({}, "", url.toString());
+    } catch (e) {}
+}
 
 // NLP Preprocessor: Tokenization & Query Expansion
 function processNLPQuery(rawQuery) {
@@ -94,47 +265,135 @@ function calculateRelevanceScore(program, queryTokens) {
     return score;
 }
 
+// Helper: Check if a file is editable according to lab guidelines
+function isFileEditable(filePath, isFullStack) {
+    if (!filePath) return false;
+    const name = filePath.split("/").pop().toLowerCase();
+    const ext = name.includes(".") ? "." + name.split(".").pop() : "";
+
+    if (name === ".env") return true;
+    if ([".html", ".css", ".json", ".sql", ".txt", ".md"].includes(ext)) return true;
+    if (ext === ".js") {
+        if (filePath.startsWith("public/") || !isFullStack) return true;
+    }
+    return false;
+}
+
 // Main React App Component
 function App() {
-    // Application State
+    const initialParams = useMemo(() => getUrlParams(), []);
+
+    // Core State
     const [programs, setPrograms] = useState([]);
-    const [selectedId, setSelectedId] = useState("Program-1");
+    const [selectedId, setSelectedId] = useState(initialParams.prog || "Program-1");
     const [programDetail, setProgramDetail] = useState(null);
     const [loadingDetail, setLoadingDetail] = useState(false);
     
-    const [activeTab, setActiveTab] = useState("readme"); // "readme", "code", "structure", "orchestrator", "runner"
-    const [activeFile, setActiveFile] = useState(null);
+    const [activeTab, setActiveTab] = useState(initialParams.tab || "readme");
+    const [activeFile, setActiveFile] = useState(initialParams.file || null);
     const [fileContent, setFileContent] = useState("");
     const [loadingFile, setLoadingFile] = useState(false);
     
-    // Search & Filtering State
-    const [searchQuery, setSearchQuery] = useState("");
-    const [filterType, setFilterType] = useState("all"); // "all", "frontend", "fullstack"
-    
-    // Server Orchestrator State
+    // Inbuilt Code Editor State
+    const [isEditing, setIsEditing] = useState(false);
+    const [editContent, setEditContent] = useState("");
+    const [isSaving, setIsSaving] = useState(false);
+    const [editorMessage, setEditorMessage] = useState(null);
+
+    // Search & Line-by-Line Code Search
+    const [searchQuery, setSearchQuery] = useState(initialParams.q || "");
+    const [filterType, setFilterType] = useState("all");
+    const [codeSearchResults, setCodeSearchResults] = useState([]);
+    const [isSearchingCode, setIsSearchingCode] = useState(false);
+    const [showCodeSearchResults, setShowCodeSearchResults] = useState(true);
+
+    // Server Orchestrator & Live Logs Telemetry
     const [subServers, setSubServers] = useState([]);
     const [serverLogs, setServerLogs] = useState({});
     const [serverActionLoading, setServerActionLoading] = useState(false);
     
-    // UI Appearance & Accessibility
-    const [theme, setTheme] = useState("dark-pro");
+    // UI Appearance, Accessibility & Scroll State
+    const [theme, setTheme] = useState(initialParams.theme || "dark-pro");
     const [scale, setScale] = useState("normal");
     const [runnerViewport, setRunnerViewport] = useState("desktop");
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [copySuccess, setCopySuccess] = useState(false);
+    const [scrollPercent, setScrollPercent] = useState(0);
 
+    const logBoxRef = useRef(null);
     const codeRef = useRef(null);
+    const viewportRef = useRef(null);
 
-    // Apply Theme & Scale to HTML Root
+    // 1. Initialize User Preferences from IndexedDB / Cookies on Boot
+    useEffect(() => {
+        (async () => {
+            const savedTheme = initialParams.theme || await StorageManager.getPref("theme");
+            if (savedTheme) setTheme(savedTheme);
+
+            const savedScale = await StorageManager.getPref("scale");
+            if (savedScale) setScale(savedScale);
+
+            if (!initialParams.prog) {
+                const savedProg = await StorageManager.getPref("last_prog");
+                if (savedProg) setSelectedId(savedProg);
+            }
+
+            if (!initialParams.tab) {
+                const savedTab = await StorageManager.getPref("last_tab");
+                if (savedTab) setActiveTab(savedTab);
+            }
+        })();
+    }, []);
+
+    // 2. Persist Preferences to IndexedDB + Cookies whenever key state updates
     useEffect(() => {
         document.documentElement.setAttribute("data-theme", theme);
+        StorageManager.setPref("theme", theme);
     }, [theme]);
 
     useEffect(() => {
         document.documentElement.setAttribute("data-scale", scale);
+        StorageManager.setPref("scale", scale);
     }, [scale]);
 
-    // Touch Swipe Gesture Handling for Mobile & Tablet Sidebar
+    useEffect(() => {
+        if (selectedId) {
+            StorageManager.setPref("last_prog", selectedId);
+            syncUrlParams({ prog: selectedId, tab: activeTab, file: activeFile, q: searchQuery });
+        }
+    }, [selectedId]);
+
+    useEffect(() => {
+        if (activeTab) {
+            StorageManager.setPref("last_tab", activeTab);
+            syncUrlParams({ prog: selectedId, tab: activeTab, file: activeFile, q: searchQuery });
+        }
+    }, [activeTab]);
+
+    useEffect(() => {
+        syncUrlParams({ prog: selectedId, tab: activeTab, file: activeFile, q: searchQuery });
+    }, [activeFile, searchQuery]);
+
+    // 3. Scroll Percentage Tracking & Viewport Mapping
+    useEffect(() => {
+        const handleScroll = (e) => {
+            const el = e.target;
+            const scrollable = el.scrollHeight - el.clientHeight;
+            if (scrollable > 0) {
+                const pct = Math.min(100, Math.max(0, Math.round((el.scrollTop / scrollable) * 100)));
+                setScrollPercent(pct);
+                StorageManager.setPref("last_scroll_pct", pct);
+            }
+        };
+
+        const target = viewportRef.current;
+        if (target) {
+            target.addEventListener("scroll", handleScroll, { passive: true });
+            return () => target.removeEventListener("scroll", handleScroll);
+        }
+    }, []);
+
+    // 4. Touch Swipe Gesture Handling for Mobile & Tablet
     useEffect(() => {
         let touchStartX = 0;
         let touchStartY = 0;
@@ -150,13 +409,10 @@ function App() {
             const deltaX = touchEndX - touchStartX;
             const deltaY = touchEndY - touchStartY;
 
-            // Trigger horizontal swipe if movement is greater than vertical scroll
-            if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 40) {
+            if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 45) {
                 if (deltaX > 0 && touchStartX < 60) {
-                    // Swipe Right near left edge: OPEN sidebar
                     setIsMobileMenuOpen(true);
                 } else if (deltaX < 0 && isMobileMenuOpen) {
-                    // Swipe Left when open: CLOSE sidebar
                     setIsMobileMenuOpen(false);
                 }
             }
@@ -171,19 +427,7 @@ function App() {
         };
     }, [isMobileMenuOpen]);
 
-    // Cycle themes when clicking icon-based theme button
-    const cycleTheme = () => {
-        const currentIndex = THEMES.findIndex(t => t.id === theme);
-        const nextIndex = (currentIndex + 1) % THEMES.length;
-        setTheme(THEMES[nextIndex].id);
-    };
-
-    // Current Theme Object
-    const currentTheme = useMemo(() => {
-        return THEMES.find(t => t.id === theme) || THEMES[0];
-    }, [theme]);
-
-    // 1. Fetch Master Programs Catalog via AJAX
+    // 5. Fetch Programs Catalog
     const fetchPrograms = async () => {
         try {
             const res = await fetch("/api/programs");
@@ -196,37 +440,73 @@ function App() {
         }
     };
 
-    // 2. Fetch Server Orchestrator Statuses
+    // 6. Fetch Sub-Server Statuses & Logs
     const fetchServers = async () => {
         try {
             const res = await fetch("/api/servers");
             const json = await res.json();
             if (json.success) {
                 setSubServers(json.data);
+                // Sync logs from server cluster status
+                const logsMap = {};
+                json.data.forEach(s => {
+                    if (s.logs && s.logs.length > 0) {
+                        logsMap[s.id] = s.logs;
+                    }
+                });
+                setServerLogs(prev => ({ ...prev, ...logsMap }));
             }
         } catch (err) {
             console.error("Failed to fetch server statuses:", err);
         }
     };
 
-    // Initial Load & Server Polling Interval
+    // 7. Fetch Live Logs for Active Full-Stack Program
+    const fetchLiveLogs = async (progId) => {
+        if (!progId) return;
+        try {
+            const res = await fetch(`/api/servers/logs/${progId}`);
+            const json = await res.json();
+            if (json.success && json.logs) {
+                setServerLogs(prev => ({ ...prev, [progId]: json.logs }));
+            }
+        } catch (err) {
+            console.error("Error fetching logs:", err);
+        }
+    };
+
+    // Polling Intervals: Server statuses + Logs polling when on orchestrator tab
     useEffect(() => {
         fetchPrograms();
         fetchServers();
 
-        const timer = setInterval(() => {
-            fetchServers();
-        }, 3500);
-
-        return () => clearInterval(timer);
+        const serverTimer = setInterval(fetchServers, 3500);
+        return () => clearInterval(serverTimer);
     }, []);
 
-    // 3. Fetch Full Details of Selected Program
+    useEffect(() => {
+        if (activeTab === "orchestrator" && selectedId) {
+            fetchLiveLogs(selectedId);
+            const logTimer = setInterval(() => fetchLiveLogs(selectedId), 1500);
+            return () => clearInterval(logTimer);
+        }
+    }, [activeTab, selectedId]);
+
+    // Auto-scroll terminal log box to bottom on update
+    useEffect(() => {
+        if (logBoxRef.current) {
+            logBoxRef.current.scrollTop = logBoxRef.current.scrollHeight;
+        }
+    }, [serverLogs, activeTab]);
+
+    // 8. Fetch Full Details of Selected Program
     useEffect(() => {
         if (!selectedId) return;
 
         let isMounted = true;
         setLoadingDetail(true);
+        setIsEditing(false);
+        setEditorMessage(null);
 
         fetch(`/api/programs/${selectedId}`)
             .then(res => res.json())
@@ -234,8 +514,12 @@ function App() {
                 if (isMounted && json.success) {
                     setProgramDetail(json.data);
                     if (json.data.files && json.data.files.length > 0) {
-                        const defaultFile = json.data.files.find(f => f.name === "server.js" || f.name === "script.js" || f.name === "index.html") || json.data.files[0];
-                        setActiveFile(defaultFile.path);
+                        // Keep current active file if it belongs to this program, else pick default
+                        const exists = activeFile && json.data.files.some(f => f.path === activeFile);
+                        if (!exists) {
+                            const defaultFile = json.data.files.find(f => f.name === "server.js" || f.name === "script.js" || f.name === "index.html") || json.data.files[0];
+                            setActiveFile(defaultFile.path);
+                        }
                     }
                 }
             })
@@ -247,60 +531,149 @@ function App() {
         return () => { isMounted = false; };
     }, [selectedId]);
 
-    // 4. Fetch File Content When Active File Changes
+    // 9. Fetch File Content When Active File Changes
     useEffect(() => {
         if (!selectedId || !activeFile) return;
 
         setLoadingFile(true);
+        setIsEditing(false);
+        setEditorMessage(null);
+
         fetch(`/api/programs/${selectedId}/file?path=${encodeURIComponent(activeFile)}`)
             .then(res => res.json())
             .then(json => {
                 if (json.success) {
                     setFileContent(json.content);
+                    setEditContent(json.content);
                 } else {
                     setFileContent(`// Error reading file: ${json.message}`);
+                    setEditContent("");
                 }
             })
             .catch(err => {
                 setFileContent(`// Failed to fetch file content: ${err.message}`);
+                setEditContent("");
             })
             .finally(() => {
                 setLoadingFile(false);
             });
     }, [selectedId, activeFile]);
 
-    // Re-highlight with Prism.js on code / tab change
+    // 10. Line-by-Line Code Search Debounce
     useEffect(() => {
-        if (window.Prism && (activeTab === "code" || activeTab === "readme")) {
+        if (!searchQuery || searchQuery.trim().length < 2) {
+            setCodeSearchResults([]);
+            return;
+        }
+
+        const timer = setTimeout(async () => {
+            setIsSearchingCode(true);
+            try {
+                const res = await fetch(`/api/search-code?q=${encodeURIComponent(searchQuery.trim())}`);
+                const json = await res.json();
+                if (json.success) {
+                    setCodeSearchResults(json.results || []);
+                }
+            } catch (e) {
+                console.error("Code search error:", e);
+            } finally {
+                setIsSearchingCode(false);
+            }
+        }, 300);
+
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
+
+    // Re-highlight with Prism.js on code or tab change
+    useEffect(() => {
+        if (window.Prism && (activeTab === "code" || activeTab === "readme") && !isEditing) {
             setTimeout(() => {
-                window.Prism.highlightAll();
+                try { window.Prism.highlightAll(); } catch (e) {}
             }, 50);
         }
-    }, [fileContent, activeTab, programDetail]);
+    }, [fileContent, activeTab, isEditing, programDetail]);
 
-    // Sub-Server Actions (Start, Stop, Start All, Stop All)
+    // Current Selected Objects
+    const currentProg = useMemo(() => {
+        return programs.find(p => p.id === selectedId) || null;
+    }, [programs, selectedId]);
+
+    const currentSubServer = useMemo(() => {
+        return subServers.find(s => s.id === selectedId) || null;
+    }, [subServers, selectedId]);
+
+    const isCurrentFileEditable = useMemo(() => {
+        return isFileEditable(activeFile, currentProg && currentProg.hasServer);
+    }, [activeFile, currentProg]);
+
+    // Universal Live URL Resolver (Works for ALL 15 Programs)
+    const getUniversalLiveUrl = (prog) => {
+        if (!prog) return "#";
+        if (prog.hasServer && prog.port) {
+            return `http://localhost:${prog.port}`;
+        }
+        return `/apps/${prog.id}/index.html`;
+    };
+
+    // GitHub Source URL for Active File
+    const currentGithubFileUrl = useMemo(() => {
+        if (!selectedId || !activeFile) return GITHUB_REPO_URL;
+        return `${GITHUB_REPO_URL}/blob/main/${selectedId}/${activeFile}`;
+    }, [selectedId, activeFile]);
+
+    // Save File Changes via Inbuilt Code Editor
+    const handleSaveFile = async (andRestart = false) => {
+        if (!selectedId || !activeFile) return;
+        setIsSaving(true);
+        setEditorMessage(null);
+
+        try {
+            const saveRes = await fetch(`/api/programs/${selectedId}/file`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ path: activeFile, content: editContent })
+            });
+            const saveJson = await saveRes.json();
+
+            if (!saveJson.success) {
+                throw new Error(saveJson.message || "Failed to save file.");
+            }
+
+            setFileContent(editContent);
+            setEditorMessage({ type: "success", text: `✓ ${saveJson.message}` });
+
+            if (andRestart && currentProg && currentProg.hasServer) {
+                setEditorMessage({ type: "info", text: "Restarting sub-server with updated configuration..." });
+                const restartRes = await fetch(`/api/servers/restart/${selectedId}`, { method: "POST" });
+                const restartJson = await restartRes.json();
+                await fetchServers();
+                await fetchLiveLogs(selectedId);
+                setActiveTab("orchestrator");
+                setEditorMessage({ type: "success", text: "✓ Saved & Server restarted successfully!" });
+            }
+        } catch (err) {
+            setEditorMessage({ type: "error", text: `Error: ${err.message}` });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    // Sub-Server Actions (Start, Stop, Restart, Clear Logs)
     const handleServerAction = async (action, progId) => {
         setServerActionLoading(true);
         try {
             let endpoint = "";
             if (action === "start") endpoint = `/api/servers/start/${progId}`;
             else if (action === "stop") endpoint = `/api/servers/stop/${progId}`;
-            else if (action === "start-all") endpoint = "/api/servers/start-all";
-            else if (action === "stop-all") endpoint = "/api/servers/stop-all";
+            else if (action === "restart") endpoint = `/api/servers/restart/${progId}`;
+            else if (action === "clear-logs") endpoint = `/api/servers/clear-logs/${progId}`;
 
             const res = await fetch(endpoint, { method: "POST" });
             const json = await res.json();
             
             await fetchServers();
             await fetchPrograms();
-
-            if (progId) {
-                const logRes = await fetch(`/api/servers/logs/${progId}`);
-                const logJson = await logRes.json();
-                if (logJson.success) {
-                    setServerLogs(prev => ({ ...prev, [progId]: logJson.logs }));
-                }
-            }
+            if (progId) await fetchLiveLogs(progId);
         } catch (err) {
             alert(`Server Action Failed: ${err.message}`);
         } finally {
@@ -310,72 +683,65 @@ function App() {
 
     // Copy Code Helper
     const copyCodeToClipboard = () => {
-        if (!fileContent) return;
-        navigator.clipboard.writeText(fileContent).then(() => {
+        const textToCopy = isEditing ? editContent : fileContent;
+        if (!textToCopy) return;
+        navigator.clipboard.writeText(textToCopy).then(() => {
             setCopySuccess(true);
             setTimeout(() => setCopySuccess(false), 2000);
         });
     };
 
-    // NLP Search Filtering & Ranking
-    const filteredPrograms = useMemo(() => {
-        const queryTokens = processNLPQuery(searchQuery);
-
-        let list = programs.map(p => {
-            const relScore = queryTokens.length > 0 ? calculateRelevanceScore(p, queryTokens) : 1;
-            return { ...p, relevanceScore: relScore };
-        });
-
-        if (filterType !== "all") {
-            list = list.filter(p => p.type === filterType);
-        }
-
-        if (queryTokens.length > 0) {
-            list = list.filter(p => p.relevanceScore > 0);
-            list.sort((a, b) => b.relevanceScore - a.relevanceScore);
-        } else {
-            list.sort((a, b) => a.num - b.num);
-        }
-
-        return list;
-    }, [programs, searchQuery, filterType]);
-
-    // Active program object
-    const currentProg = useMemo(() => {
-        return programs.find(p => p.id === selectedId) || programs[0] || null;
-    }, [programs, selectedId]);
-
-    // Active sub-server info
-    const currentSubServer = useMemo(() => {
-        return subServers.find(s => s.id === selectedId) || null;
-    }, [subServers, selectedId]);
-
-    // Count of running fullstack servers
-    const runningServerCount = useMemo(() => {
-        return subServers.filter(s => s.status === "running").length;
-    }, [subServers]);
-
-    // Determine Live App URL (Universal for ALL 15 Programs!)
-    const getUniversalLiveUrl = (prog) => {
-        if (!prog) return "#";
-        if (prog.hasServer && currentSubServer && currentSubServer.status === "running") {
-            return currentSubServer.liveUrl;
-        }
-        return `/apps/${prog.id}/index.html`;
+    // Cycle themes
+    const cycleTheme = () => {
+        const currentIndex = THEMES.findIndex(t => t.id === theme);
+        const nextIndex = (currentIndex + 1) % THEMES.length;
+        setTheme(THEMES[nextIndex].id);
     };
 
-    // ---------------- Render Sub-Components ----------------
+    // NLP Search Filtering
+    const filteredPrograms = useMemo(() => {
+        let result = programs;
 
-    // 1. Header Bar (Media Responsive & Icon-based on Small Devices)
+        if (filterType === "frontend") {
+            result = result.filter(p => !p.hasServer);
+        } else if (filterType === "fullstack") {
+            result = result.filter(p => p.hasServer);
+        }
+
+        if (searchQuery.trim().length > 0) {
+            const queryTokens = processNLPQuery(searchQuery);
+            if (queryTokens.length > 0) {
+                const scored = result.map(p => ({
+                    program: p,
+                    score: calculateRelevanceScore(p, queryTokens)
+                }));
+                result = scored
+                    .filter(item => item.score > 0)
+                    .sort((a, b) => b.score - a.score)
+                    .map(item => item.program);
+            }
+        }
+
+        return result;
+    }, [programs, searchQuery, filterType]);
+
+    const runningServerCount = subServers.filter(s => s.status === "running").length;
+    const currentTheme = THEMES.find(t => t.id === theme) || THEMES[0];
+
+    // --------------------------------------------------------------------------
+    // Render Functions
+    // --------------------------------------------------------------------------
+
+    // 1. Top Header with Creator Ecosystem Backlinks
     const renderHeader = () => {
         return h("header", { className: "app-header" },
             h("div", { className: "header-left" },
                 h("button", {
-                    className: `mobile-menu-toggle ${isMobileMenuOpen ? "active" : ""}`,
+                    className: "mobile-menu-toggle mobile-only",
                     onClick: () => setIsMobileMenuOpen(!isMobileMenuOpen),
-                    "aria-label": "Toggle Program Navigation Drawer"
+                    "aria-label": "Toggle navigation drawer"
                 }, "☰"),
-                h("span", { className: "brand-badge" },
+                h("div", { className: "header-brand-badge" },
                     h("span", { className: "brand-full" }, "MDU ROHTAK"),
                     h("span", { className: "brand-short" }, "MDU")
                 ),
@@ -388,6 +754,29 @@ function App() {
                 )
             ),
             h("div", { className: "header-right" },
+                // Creator Ecosystem Links Pill (Desktop)
+                h("a", {
+                    href: "https://codagenda.akshatpsd2005.workers.dev/",
+                    target: "_blank",
+                    rel: "noreferrer",
+                    className: "ecosystem-nav-pill desktop-only",
+                    title: "Codagenda — AI Web IDE by Akshat Prasad"
+                },
+                    h("span", null, "⚡"),
+                    h("span", null, "Codagenda IDE ↗")
+                ),
+
+                h("a", {
+                    href: "https://dpgnotes.web.app/",
+                    target: "_blank",
+                    rel: "noreferrer",
+                    className: "ecosystem-nav-pill desktop-only",
+                    title: "DPGNotes Academic Portal"
+                },
+                    h("span", null, "🎓"),
+                    h("span", null, "DPGNotes ↗")
+                ),
+
                 // Active Server Cluster Pill
                 h("div", {
                     className: "server-cluster-pill",
@@ -432,7 +821,7 @@ function App() {
         );
     };
 
-    // 2. Sidebar with NLP Search & Dedicated Mobile Header
+    // 2. Sidebar with NLP Search, Code Search Results & Program List
     const renderSidebar = () => {
         const queryTokens = processNLPQuery(searchQuery);
 
@@ -452,7 +841,7 @@ function App() {
                     h("input", {
                         type: "text",
                         className: "search-input",
-                        placeholder: "NLP Search: e.g. 'mongo validation', 'oauth login', 'weather'...",
+                        placeholder: "NLP Search: e.g. 'mongoose', 'oauth', 'weather', 'localStorage'...",
                         value: searchQuery,
                         onChange: (e) => setSearchQuery(e.target.value)
                     }),
@@ -480,6 +869,37 @@ function App() {
                     h("span", null, `🧠 NLP Expanded: [${queryTokens.slice(0, 4).join(", ")}${queryTokens.length > 4 ? "..." : ""}]`)
                 )
             ),
+
+            // Line-by-Line Code Search Results Panel
+            codeSearchResults.length > 0 && h("div", { className: "code-search-pane" },
+                h("div", { className: "code-search-header" },
+                    h("span", null, `⚡ Code Line Matches (${codeSearchResults.length})`),
+                    h("button", {
+                        className: "btn-console",
+                        onClick: () => setShowCodeSearchResults(!showCodeSearchResults)
+                    }, showCodeSearchResults ? "Hide" : "Show")
+                ),
+                showCodeSearchResults && codeSearchResults.slice(0, 8).map((match, idx) => (
+                    h("div", {
+                        key: `${match.progId}-${match.file}-${match.lineNum}-${idx}`,
+                        className: "code-match-item",
+                        onClick: () => {
+                            setSelectedId(match.progId);
+                            setActiveTab("code");
+                            setActiveFile(match.file);
+                            setIsMobileMenuOpen(false);
+                        }
+                    },
+                        h("div", { className: "code-match-meta" },
+                            h("span", null, `Prac #${match.progNum.toString().padStart(2, "0")} • ${match.progId}`),
+                            h("span", { className: "code-match-file" }, `${match.file}:L${match.lineNum}`)
+                        ),
+                        h("div", { className: "code-match-snippet" }, match.snippet)
+                    )
+                ))
+            ),
+
+            // Main Practicals List
             h("div", { className: "program-list" },
                 filteredPrograms.length === 0 && h("div", {
                     style: { padding: "30px 15px", textAlign: "center", color: "var(--text-muted)", fontSize: "0.9rem" }
@@ -526,9 +946,8 @@ function App() {
                 h("h2", null, `Practical ${currentProg.num}: ${currentProg.title}`),
                 h("p", { className: "prog-syllabus-text" }, currentProg.syllabus)
             ),
-            // Actions Cluster: Universal Live URL + Sub-Server Controls
             h("div", { className: "banner-actions-cluster" },
-                // Universal Live URL Button (Enabled for ALL 15 Programs!)
+                // Universal Live URL Button (Enabled for ALL 15 Programs)
                 h("a", {
                     href: universalUrl,
                     target: "_blank",
@@ -569,7 +988,7 @@ function App() {
             h("button", {
                 className: `tab-btn ${activeTab === "code" ? "active" : ""}`,
                 onClick: () => setActiveTab("code")
-            }, "💻 Code Explorer"),
+            }, "💻 Code Explorer & Inbuilt Editor"),
             h("button", {
                 className: `tab-btn ${activeTab === "structure" ? "active" : ""}`,
                 onClick: () => setActiveTab("structure")
@@ -600,7 +1019,7 @@ function App() {
         });
     };
 
-    // 6. Tab Content: Code Explorer
+    // 6. Tab Content: Code Explorer & Inbuilt Editor
     const renderCodeTab = () => {
         if (!programDetail || !programDetail.files) return null;
 
@@ -608,6 +1027,7 @@ function App() {
         const prismLang = ext === "js" ? "javascript" : (ext === "html" ? "markup" : ext);
 
         return h("div", { className: "code-explorer-container" },
+            // Toolbar
             h("div", { className: "code-toolbar" },
                 h("div", { className: "file-tabs-scroll" },
                     programDetail.files.map(f => {
@@ -615,18 +1035,99 @@ function App() {
                         return h("button", {
                             key: f.path,
                             className: `file-tab ${isFileActive ? "active" : ""}`,
-                            onClick: () => setActiveFile(f.path)
+                            onClick: () => {
+                                setActiveFile(f.path);
+                                setIsEditing(false);
+                            }
                         }, f.name);
                     })
                 ),
                 h("div", { className: "code-actions" },
+                    // GitHub Source Link
+                    h("a", {
+                        href: currentGithubFileUrl,
+                        target: "_blank",
+                        rel: "noreferrer",
+                        className: "btn-github-link",
+                        title: "Inspect source code on GitHub"
+                    },
+                        h("span", null, "🐙"),
+                        h("span", null, "View on GitHub ↗")
+                    ),
+
+                    // Inbuilt Editor Toggle Button (Only for Editable Frontend / .env Files)
+                    isCurrentFileEditable ? h("button", {
+                        className: `btn-ctrl ${isEditing ? "stop" : "start"}`,
+                        onClick: () => setIsEditing(!isEditing),
+                        title: isEditing ? "Switch back to Syntax Highlighted View" : "Edit this file in browser"
+                    }, isEditing ? "👁️ View Highlighted" : "✏️ Edit File") : h("span", {
+                        className: "editor-badge readonly",
+                        title: "Protected file: Only Frontend files and .env are editable"
+                    }, "🔒 Core Server (Read Only)"),
+
+                    // Copy Code
                     h("button", {
                         className: "btn-copy",
                         onClick: copyCodeToClipboard
                     }, copySuccess ? "✓ Copied!" : "📋 Copy Code")
                 )
             ),
-            h("div", { className: "code-scroll-pane" },
+
+            // Inbuilt Editor Status / Action Bar
+            isEditing && h("div", { className: "editor-status-bar" },
+                h("div", { className: "editor-status-left" },
+                    h("span", { className: "editor-badge editable" }, "Editable Mode"),
+                    h("span", null, `File: ${activeFile}`),
+                    h("span", null, `• ${editContent.split("\n").length} lines`),
+                    h("span", null, `• ${editContent.length} chars`)
+                ),
+                h("div", { className: "editor-actions" },
+                    h("button", {
+                        className: "btn-save-code",
+                        disabled: isSaving,
+                        onClick: () => handleSaveFile(false)
+                    }, isSaving ? "Saving..." : "💾 Save Changes"),
+
+                    currentProg && currentProg.hasServer && h("button", {
+                        className: "btn-restart-server",
+                        disabled: isSaving,
+                        onClick: () => handleSaveFile(true),
+                        title: "Save changes and immediately restart Node.js server with new configuration"
+                    }, isSaving ? "Saving..." : "⚡ Save & Restart Server"),
+
+                    h("button", {
+                        className: "btn-console",
+                        onClick: () => setEditContent(fileContent)
+                    }, "↺ Reset"),
+
+                    h("button", {
+                        className: "btn-console",
+                        onClick: () => setIsEditing(false)
+                    }, "✕ Close Editor")
+                )
+            ),
+
+            // Notification message for editor
+            editorMessage && h("div", {
+                style: {
+                    padding: "8px 16px",
+                    background: editorMessage.type === "success" ? "var(--success-bg)" : (editorMessage.type === "error" ? "var(--danger-bg)" : "rgba(56, 189, 248, 0.1)"),
+                    color: editorMessage.type === "success" ? "var(--success)" : (editorMessage.type === "error" ? "var(--danger)" : "var(--primary)"),
+                    fontSize: "0.82rem",
+                    fontWeight: "600"
+                }
+            }, editorMessage.text),
+
+            // Main Editor or Prism.js Viewer Pane
+            isEditing ? h("div", { className: "code-editor-pane" },
+                h("textarea", {
+                    className: "editor-textarea",
+                    value: editContent,
+                    onChange: (e) => setEditContent(e.target.value),
+                    spellCheck: "false",
+                    "aria-label": `Edit content of ${activeFile}`
+                })
+            ) : h("div", { className: "code-scroll-pane" },
                 loadingFile
                     ? h("div", { style: { padding: "30px", color: "var(--text-muted)" } }, "Streaming file content...")
                     : h("pre", { className: `line-numbers language-${prismLang}` },
@@ -669,15 +1170,21 @@ function App() {
 
         return h("div", { className: "folder-explorer-card" },
             h("h3", { style: { marginBottom: "16px", color: "var(--primary)" } }, `📂 Project Directory Hierarchy: ${selectedId}`),
-            h("p", { style: { fontSize: "0.88rem", color: "var(--text-secondary)", marginBottom: "20px" } }, "Click any code or configuration file to immediately inspect its syntax-highlighted source."),
+            h("p", { style: { fontSize: "0.88rem", color: "var(--text-secondary)", marginBottom: "20px" } }, "Click any code or configuration file to immediately inspect or edit its source."),
             renderTreeNodes(programDetail.tree)
         );
     };
 
-    // 8. Tab Content: Sub-Server Process Orchestrator
+    // 8. Tab Content: Sub-Server Process Orchestrator & Live Terminal Logs
     const renderOrchestratorTab = () => {
+        if (!currentProg) {
+            return h("div", { style: { padding: "40px", textAlign: "center", color: "var(--text-secondary)" } }, "Loading process orchestrator details...");
+        }
+
         const isRunning = currentSubServer && currentSubServer.status === "running";
-        const logs = (currentSubServer && currentSubServer.logs) || [];
+        const logs = (serverLogs[selectedId] && serverLogs[selectedId].length > 0)
+            ? serverLogs[selectedId]
+            : ((currentSubServer && currentSubServer.logs && currentSubServer.logs.length > 0) ? currentSubServer.logs : []);
 
         return h("div", { className: "orchestrator-view" },
             h("div", { className: "orchestrator-card" },
@@ -703,23 +1210,43 @@ function App() {
                         isRunning
                             ? h("a", { href: currentSubServer.liveUrl, target: "_blank", rel: "noreferrer", className: "live-url-link" }, `${currentSubServer.liveUrl} ↗`)
                             : h("span", { style: { color: "var(--text-muted)" } }, "Start server to activate live URL"),
-                        h("div", { style: { display: "flex", gap: "8px", marginTop: "10px" } },
+                        h("div", { style: { display: "flex", gap: "8px", marginTop: "10px", flexWrap: "wrap" } },
                             !isRunning ? h("button", {
                                 className: "btn-ctrl start",
                                 onClick: () => handleServerAction("start", selectedId)
-                            }, "Start Server") : h("button", {
+                            }, "▶ Start Server") : h("button", {
                                 className: "btn-ctrl stop",
                                 onClick: () => handleServerAction("stop", selectedId)
-                            }, "Stop Server")
+                            }, "⏹ Stop Server"),
+
+                            isRunning && h("button", {
+                                className: "btn-restart-server",
+                                onClick: () => handleServerAction("restart", selectedId)
+                            }, "⚡ Restart Server")
                         )
                     )
                 )
             ),
             h("div", { className: "orchestrator-card" },
-                h("h4", { style: { marginBottom: "12px" } }, "📡 Live Process Terminal & Stdout Logs"),
-                h("div", { className: "console-log-box" },
+                h("div", { className: "console-toolbar" },
+                    h("h4", { style: { margin: 0 } }, "📡 Live Process Terminal & Stdout Logs"),
+                    h("div", { className: "console-actions" },
+                        h("button", {
+                            className: "btn-console",
+                            onClick: () => fetchLiveLogs(selectedId)
+                        }, "🔄 Refresh"),
+                        h("button", {
+                            className: "btn-console",
+                            onClick: () => handleServerAction("clear-logs", selectedId)
+                        }, "🗑 Clear Logs")
+                    )
+                ),
+                h("div", {
+                    ref: logBoxRef,
+                    className: "console-log-box"
+                },
                     logs.length === 0
-                        ? "// No active logs yet. Click 'Start Server' to initiate child process..."
+                        ? "// No active logs yet. Click 'Start Server' or 'Restart Server' to initiate child process..."
                         : logs.join("\n")
                 )
             )
@@ -728,7 +1255,9 @@ function App() {
 
     // 9. Tab Content: Interactive Live App Runner
     const renderRunnerTab = () => {
-        if (!currentProg) return null;
+        if (!currentProg) {
+            return h("div", { style: { padding: "40px", textAlign: "center", color: "var(--text-secondary)" } }, "Loading interactive live runner...");
+        }
 
         const universalUrl = getUniversalLiveUrl(currentProg);
         const iframeWidth = runnerViewport === "mobile" ? "375px" : (runnerViewport === "tablet" ? "768px" : "100%");
@@ -752,37 +1281,83 @@ function App() {
                     h("button", {
                         className: `sim-btn ${runnerViewport === "tablet" ? "active" : ""}`,
                         onClick: () => setRunnerViewport("tablet")
-                    }, "📱 Tablet (768px)"),
+                    }, "📟 Tablet (768px)"),
                     h("button", {
                         className: `sim-btn ${runnerViewport === "desktop" ? "active" : ""}`,
                         onClick: () => setRunnerViewport("desktop")
-                    }, "🖥️ Responsive (100%)")
+                    }, "💻 Responsive (100%)")
                 )
             ),
             h("div", { className: "runner-iframe-frame" },
                 h("iframe", {
                     key: `${currentProg.id}-${universalUrl}`,
                     src: universalUrl,
+                    title: `Interactive Runner - ${currentProg.title}`,
                     className: "runner-iframe",
-                    style: { width: iframeWidth, height: "100%" },
-                    title: `Interactive Live Preview of ${currentProg.title}`
+                    style: { width: iframeWidth },
+                    sandbox: "allow-scripts allow-forms allow-same-origin allow-modals"
                 })
             )
         );
     };
 
-    // Render Master App Shell
+    // 10. Creator Ecosystem & Academic Backlinks Footer
+    const renderFooter = () => {
+        return h("footer", { className: "ecosystem-footer" },
+            h("div", { className: "ecosystem-footer-title" },
+                h("span", null, "🌐"),
+                h("span", null, "Developer Ecosystem & Academic Backlinks")
+            ),
+            h("p", { className: "ecosystem-footer-subtitle" },
+                "Created by Akshat Prasad — Bachelor of Computer Applications (BCA), DPGSTM / MDU Rohtak. Explore interconnected AI developer tools, student academic platforms, and research utilities:"
+            ),
+            h("div", { className: "ecosystem-grid" },
+                CREATOR_ECOSYSTEM.map(proj => (
+                    h("a", {
+                        key: proj.name,
+                        href: proj.url,
+                        target: "_blank",
+                        rel: "noreferrer",
+                        className: "ecosystem-card"
+                    },
+                        h("div", { className: "ecosystem-card-title" },
+                            h("span", null, proj.icon),
+                            h("span", null, proj.name),
+                            h("span", { style: { fontSize: "0.65rem", padding: "1px 6px", background: "var(--bg-surface)", borderRadius: "4px", color: "var(--text-muted)" } }, proj.badge)
+                        ),
+                        h("div", { className: "ecosystem-card-desc" }, proj.desc)
+                    )
+                ))
+            )
+        );
+    };
+
+    // --------------------------------------------------------------------------
+    // Main App Shell
+    // --------------------------------------------------------------------------
     return h("div", { className: "app-shell" },
-        renderHeader(),
-        // Fullscreen Backdrop for Mobile/Tablet Drawer
+        // Top Reading Scroll Progress Bar
         h("div", {
-            className: `sidebar-backdrop ${isMobileMenuOpen ? "active" : ""}`,
-            onClick: () => setIsMobileMenuOpen(false),
-            "aria-label": "Close navigation drawer"
+            className: "scroll-progress-bar",
+            style: { width: `${scrollPercent}%` }
         }),
+
+        renderHeader(),
+
         h("div", { className: "main-workspace" },
+            // Mobile Backdrop for Drawer Occlusion
+            h("div", {
+                className: `sidebar-backdrop ${isMobileMenuOpen ? "active" : ""}`,
+                onClick: () => setIsMobileMenuOpen(false),
+                "aria-hidden": "true"
+            }),
+
             renderSidebar(),
-            h("main", { className: "main-viewport" },
+
+            h("main", {
+                ref: viewportRef,
+                className: "main-viewport"
+            },
                 renderBanner(),
                 renderTabs(),
                 h("div", { className: "tab-content-area" },
@@ -791,7 +1366,8 @@ function App() {
                     activeTab === "structure" && renderStructureTab(),
                     activeTab === "orchestrator" && renderOrchestratorTab(),
                     activeTab === "runner" && renderRunnerTab()
-                )
+                ),
+                renderFooter()
             )
         )
     );
@@ -799,7 +1375,7 @@ function App() {
 
 // Mount React Root
 const rootElement = document.getElementById("root");
-if (rootElement && window.ReactDOM) {
+if (rootElement) {
     const root = window.ReactDOM.createRoot(rootElement);
     root.render(h(App));
 }
