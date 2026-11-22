@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic API Content Loader</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header class="app-header">
+        <div class="header-container">
+            <h1>🌐 External API Content Explorer</h1>
+            <p class="subtitle">Demonstrating Asynchronous Data Fetching using JavaScript Fetch API</p>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <!-- Controls Bar -->
+        <section class="controls-panel">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Search loaded posts by title or keyword..." aria-label="Search content">
+            </div>
+            <div class="btn-group">
+                <button id="fetchBtn" class="btn primary-btn">
+                    <span>🔄 Fetch Live Data</span>
+                </button>
+                <button id="clearBtn" class="btn secondary-btn">
+                    <span>🗑️ Clear Feed</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- Status Indicator -->
+        <div id="statusMessage" class="status-box hidden" role="status"></div>
+
+        <!-- Dynamic Content Feed -->
+        <section id="contentFeed" class="cards-grid" aria-live="polite">
+            <div class="empty-state">
+                <p>Click <strong>"Fetch Live Data"</strong> to dynamically request and render content from the external REST API.</p>
+            </div>
+        </section>
+    </main>
+
+    <footer class="app-footer">
+        <p>MDU Rohtak BCA Lab Assignment | Program 04 &copy; Web Application Development</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

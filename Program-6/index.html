@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Weather Forecast Application</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header class="app-header">
+        <h1>☀️ Live Weather Forecast Portal</h1>
+        <p>Fetching Real-Time Meteorological Data via External Open-Meteo REST API</p>
+    </header>
+
+    <main class="container">
+        <!-- Search & Control Section -->
+        <section class="search-panel">
+            <form id="searchForm" class="search-form">
+                <input type="text" id="cityInput" placeholder="Enter city name (e.g., Rohtak, Delhi, London)..." required autocomplete="off" aria-label="City Name">
+                <button type="submit" class="btn primary-btn">🔍 Search Weather</button>
+            </form>
+
+            <!-- Quick City Shortcut Buttons -->
+            <div class="quick-cities">
+                <span class="quick-label">Popular:</span>
+                <button class="city-chip" data-city="Rohtak">Rohtak</button>
+                <button class="city-chip" data-city="Delhi">New Delhi</button>
+                <button class="city-chip" data-city="Chandigarh">Chandigarh</button>
+                <button class="city-chip" data-city="Mumbai">Mumbai</button>
+                <button class="city-chip" data-city="London">London</button>
+            </div>
+        </section>
+
+        <!-- Status Message / Spinner -->
+        <div id="statusBox" class="status-box hidden" role="status"></div>
+
+        <!-- Weather Display Card -->
+        <section id="weatherCard" class="weather-card hidden">
+            <div class="card-header">
+                <div>
+                    <h2 id="cityName">City Name</h2>
+                    <p id="localTime" class="time-stamp">Updated Just Now</p>
+                </div>
+                <div class="temp-unit-toggle">
+                    <button id="celsiusBtn" class="unit-btn active">&deg;C</button>
+                    <button id="fahrenheitBtn" class="unit-btn">&deg;F</button>
+                </div>
+            </div>
+
+            <div class="current-weather">
+                <div class="weather-visual">
+                    <span id="weatherIcon" class="weather-icon">🌤️</span>
+                    <div>
+                        <div class="temperature">
+                            <span id="tempValue">--</span><span id="tempUnit">&deg;C</span>
+                        </div>
+                        <p id="weatherDesc" class="weather-desc">Clear Sky</p>
+                    </div>
+                </div>
+
+                <div class="weather-metrics">
+                    <div class="metric-item">
+                        <span class="metric-icon">🌡️</span>
+                        <div>
+                            <span class="metric-label">Feels Like</span>
+                            <span id="feelsLike" class="metric-val">--&deg;C</span>
+                        </div>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-icon">💧</span>
+                        <div>
+                            <span class="metric-label">Humidity</span>
+                            <span id="humidity" class="metric-val">--%</span>
+                        </div>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-icon">💨</span>
+                        <div>
+                            <span class="metric-label">Wind Speed</span>
+                            <span id="windSpeed" class="metric-val">-- km/h</span>
+                        </div>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-icon">🧭</span>
+                        <div>
+                            <span class="metric-label">Wind Direction</span>
+                            <span id="windDir" class="metric-val">--&deg;</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5-Day Forecast Grid -->
+            <div class="forecast-section">
+                <h3>📅 5-Day Extended Forecast</h3>
+                <div id="forecastGrid" class="forecast-grid"></div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="app-footer">
+        <p>MDU Rohtak BCA Lab Assignment | Program 06 &copy; Web Application Development</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

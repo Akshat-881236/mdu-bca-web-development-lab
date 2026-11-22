@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic To-Do List Application</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header class="app-header">
+        <h1>✅ Student Task &amp; To-Do Tracker</h1>
+        <p>Dynamic Task Management with Persistent Browser LocalStorage</p>
+    </header>
+
+    <main class="container">
+        <!-- Input Task Card -->
+        <section class="card input-card">
+            <form id="todoForm">
+                <div class="input-main-row">
+                    <input type="text" id="taskTitle" placeholder="What task needs to be completed? (e.g. Prepare BCA Lab Manual)..." required autocomplete="off" aria-label="Task title">
+                    <button type="submit" id="addBtn" class="btn primary-btn">+ Add Task</button>
+                </div>
+
+                <div class="input-options-row">
+                    <div class="option-item">
+                        <label for="taskCategory">Category:</label>
+                        <select id="taskCategory">
+                            <option value="Study">📚 Study / Academic</option>
+                            <option value="Lab">💻 Lab Practical</option>
+                            <option value="Personal">👤 Personal</option>
+                            <option value="Project">🚀 Project Work</option>
+                        </select>
+                    </div>
+
+                    <div class="option-item">
+                        <label for="taskPriority">Priority:</label>
+                        <select id="taskPriority">
+                            <option value="Medium">⚡ Medium</option>
+                            <option value="High">🔥 High</option>
+                            <option value="Low">🌱 Low</option>
+                        </select>
+                    </div>
+
+                    <div class="option-item">
+                        <label for="taskDueDate">Due Date:</label>
+                        <input type="date" id="taskDueDate">
+                    </div>
+                </div>
+            </form>
+        </section>
+
+        <!-- Progress Overview -->
+        <section class="card progress-card">
+            <div class="progress-info">
+                <div>
+                    <span class="progress-title">Overall Task Completion</span>
+                    <span id="progressSummary" class="progress-summary">0 of 0 tasks completed (0%)</span>
+                </div>
+                <button id="clearCompletedBtn" class="btn-text">🧹 Clear Completed</button>
+            </div>
+            <div class="progress-track">
+                <div id="progressBar" class="progress-fill" style="width: 0%;"></div>
+            </div>
+        </section>
+
+        <!-- Filter & Search Toolbar -->
+        <section class="toolbar">
+            <div class="filter-tabs">
+                <button class="tab-btn active" data-filter="all">All</button>
+                <button class="tab-btn" data-filter="active">Active</button>
+                <button class="tab-btn" data-filter="completed">Completed</button>
+            </div>
+
+            <div class="search-wrap">
+                <input type="text" id="searchInput" placeholder="Filter tasks by keyword..." aria-label="Filter tasks">
+            </div>
+        </section>
+
+        <!-- Task List Feed -->
+        <section class="tasks-container">
+            <ul id="taskList" class="task-list" aria-live="polite"></ul>
+        </section>
+    </main>
+
+    <footer class="app-footer">
+        <p>MDU Rohtak BCA Lab Assignment | Program 11 &copy; Web Application Development</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

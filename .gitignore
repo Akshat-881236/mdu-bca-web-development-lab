@@ -1,0 +1,28 @@
+# Node modules
+node_modules/
+*/node_modules/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+*/.env
+
+# Logs & Runtime files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+submissions.json
+Program-5/submissions.json
+Program-8/database/records.db
+Program-9/admissions_backup.json
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Build outputs
+dist/
+build/
+.cache/

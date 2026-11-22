@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MDU Admission Form - MongoDB & Node.js</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header class="app-header">
+        <div class="header-inner">
+            <h1>🏛️ University Admission Portal</h1>
+            <p>Database Storage &amp; Schema Validation with Node.js &amp; MongoDB</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Admission Form Card -->
+        <section class="card form-card">
+            <div class="card-title-row">
+                <h2>BCA / Higher Education Admission Registration</h2>
+                <span class="badge">Session 2026-27</span>
+            </div>
+            <p class="form-desc">Please complete all fields carefully. All entries undergo multi-tier client &amp; MongoDB schema verification.</p>
+
+            <form id="admissionForm" novalidate>
+                <!-- Personal Details -->
+                <fieldset class="form-section">
+                    <legend>1. Personal Information</legend>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="fullName">Candidate's Full Name <span class="req">*</span></label>
+                            <input type="text" id="fullName" name="fullName" required placeholder="As per Matriculation certificate">
+                            <span class="error-msg" id="fullNameErr"></span>
+                        </div>
+                        <div class="form-group">
+                            <label for="fatherName">Father's Name <span class="req">*</span></label>
+                            <input type="text" id="fatherName" name="fatherName" required placeholder="Enter Father's Name">
+                            <span class="error-msg" id="fatherNameErr"></span>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="dob">Date of Birth <span class="req">*</span></label>
+                            <input type="date" id="dob" name="dob" required>
+                            <span class="error-msg" id="dobErr"></span>
+                        </div>
+                        <div class="form-group">
+                            <label for="gender">Gender <span class="req">*</span></label>
+                            <select id="gender" name="gender" required>
+                                <option value="">Select Gender</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                <option value="Other">Other</option>
+                            </select>
+                            <span class="error-msg" id="genderErr"></span>
+                        </div>
+                    </div>
+                </fieldset>
+
+                <!-- Contact & Academic Details -->
+                <fieldset class="form-section">
+                    <legend>2. Contact &amp; Academic Records</legend>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="email">Email Address <span class="req">*</span></label>
+                            <input type="email" id="email" name="email" required placeholder="applicant@example.com">
+                            <span class="error-msg" id="emailErr"></span>
+                        </div>
+                        <div class="form-group">
+                            <label for="mobile">Mobile Number (10 Digits) <span class="req">*</span></label>
+                            <input type="tel" id="mobile" name="mobile" required placeholder="e.g. 9812345678">
+                            <span class="error-msg" id="mobileErr"></span>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="course">Course Applying For <span class="req">*</span></label>
+                            <select id="course" name="course" required>
+                                <option value="">Select Course</option>
+                                <option value="BCA">BCA (Bachelor of Computer Applications)</option>
+                                <option value="MCA">MCA (Master of Computer Applications)</option>
+                                <option value="B.Tech CSE">B.Tech (Computer Science &amp; Engg)</option>
+                                <option value="M.Tech CSE">M.Tech (Computer Science)</option>
+                                <option value="BBA">BBA (Bachelor of Business Admin)</option>
+                            </select>
+                            <span class="error-msg" id="courseErr"></span>
+                        </div>
+                        <div class="form-group">
+                            <label for="tenthPercentage">10th Class Percentage (%) <span class="req">*</span></label>
+                            <input type="number" id="tenthPercentage" name="tenthPercentage" step="0.01" min="33" max="100" required placeholder="e.g. 84.50">
+                            <span class="error-msg" id="tenthErr"></span>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="twelfthPercentage">12th Class Percentage (%) <span class="req">*</span></label>
+                            <input type="number" id="twelfthPercentage" name="twelfthPercentage" step="0.01" min="33" max="100" required placeholder="e.g. 88.20">
+                            <span class="error-msg" id="twelfthErr"></span>
+                        </div>
+                        <div class="form-group">
+                            <label for="address">Permanent Residential Address <span class="req">*</span></label>
+                            <textarea id="address" name="address" rows="2" required placeholder="House No, Street, City, State, PIN Code"></textarea>
+                            <span class="error-msg" id="addressErr"></span>
+                        </div>
+                    </div>
+                </fieldset>
+
+                <div class="form-actions">
+                    <button type="submit" id="submitBtn" class="btn primary-btn">
+                        <span>📝 Submit Application</span>
+                    </button>
+                </div>
+
+                <div id="alertBox" class="alert-box hidden" role="alert"></div>
+            </form>
+        </section>
+
+        <!-- Records Drawer Section -->
+        <section class="card records-card">
+            <div class="records-header">
+                <div>
+                    <h3>📋 Registered Applications in Database</h3>
+                    <p class="subtitle" id="engineStatus">Connecting to backend...</p>
+                </div>
+                <button id="refreshBtn" class="btn-sm">🔄 Refresh Database Records</button>
+            </div>
+            <div id="recordsFeed" class="records-feed">
+                <p class="muted-text">Fetching submitted application documents...</p>
+            </div>
+        </section>
+    </main>
+
+    <footer class="app-footer">
+        <p>MDU Rohtak BCA Lab Assignment | Program 09 &copy; Web Application Development</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

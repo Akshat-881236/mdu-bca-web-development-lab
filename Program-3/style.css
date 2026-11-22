@@ -1,0 +1,153 @@
+* {
+    box-sizing: border-box;
+}
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f1f5f9;
+    color: #1e293b;
+}
+header {
+    background: #2563eb;
+    color: white;
+    padding: 20px;
+    text-align: center;
+}
+header h1 {
+    margin: 0 0 15px;
+}
+nav {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+nav button {
+    background: transparent;
+    color: white;
+    border: 1px solid white;
+}
+.container {
+    width: 90%;
+    max-width: 850px;
+    margin: 30px auto;
+    min-height: 65vh;
+}
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+.form-card, .post-card {
+    background: white;
+    padding: 25px;
+    margin-bottom: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+label {
+    display: block;
+    margin-top: 15px;
+    font-weight: bold;
+}
+input, textarea {
+    width: 100%;
+    padding: 12px;
+    margin-top: 7px;
+    border: 1px solid #cbd5e1;
+    border-radius: 5px;
+    font: inherit;
+}
+textarea {
+    resize: vertical;
+}
+input:focus, textarea:focus {
+    outline: none;
+    border-color: #2563eb;
+}
+button {
+    padding: 11px 17px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 15px;
+}
+.primary-btn {
+    background: #2563eb;
+    color: white;
+}
+.primary-btn:hover {
+    background: #1d4ed8;
+}
+.secondary-btn {
+    background: #64748b;
+    color: white;
+}
+.delete-btn {
+    background: #dc2626;
+    color: white;
+}
+.delete-btn:hover {
+    background: #b91c1c;
+}
+.form-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 20px;
+}
+.post-card h3 {
+    margin-top: 0;
+    color: #2563eb;
+    overflow-wrap: anywhere;
+}
+.post-meta {
+    color: #64748b;
+    font-size: 14px;
+}
+.post-content {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    line-height: 1.6;
+}
+.post-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 15px;
+}
+.post-actions button {
+    margin: 0;
+}
+.empty-message {
+    text-align: center;
+    padding: 30px;
+    background: white;
+    border-radius: 8px;
+}
+.hidden {
+    display: none;
+}
+footer {
+    text-align: center;
+    padding: 20px;
+    color: #64748b;
+}
+#message {
+    font-weight: bold;
+}
+@media (max-width: 480px) {
+    .container {
+        width: 94%;
+        margin: 20px auto;
+    }
+    .form-card,
+    .post-card {
+        padding: 18px;
+    }
+    header h1 {
+        font-size: 25px;
+    }
+}

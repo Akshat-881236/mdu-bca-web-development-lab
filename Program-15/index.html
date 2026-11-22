@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Academic Quiz Portal</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header class="app-header">
+        <h1>🧠 MDU BCA Academic Quiz Examination</h1>
+        <p>Interactive Knowledge Assessment with Real-Time Score &amp; High Score Tracking</p>
+    </header>
+
+    <main class="container">
+        <!-- Screen 1: Quiz Welcome & Configuration -->
+        <section id="startScreen" class="card quiz-card">
+            <h2>Select Quiz Category</h2>
+            <p class="subtitle">Test your understanding across core subjects of the BCA curriculum. Each question has a 20-second timer.</p>
+
+            <div class="category-grid">
+                <button class="cat-btn active" data-category="web">
+                    <span class="cat-icon">🌐</span>
+                    <span class="cat-name">Web Application Development</span>
+                    <span class="cat-count">5 Questions</span>
+                </button>
+                <button class="cat-btn" data-category="dbms">
+                    <span class="cat-icon">🗄️</span>
+                    <span class="cat-name">Database Systems &amp; SQL</span>
+                    <span class="cat-count">5 Questions</span>
+                </button>
+                <button class="cat-btn" data-category="os">
+                    <span class="cat-icon">💻</span>
+                    <span class="cat-name">Operating Systems &amp; Architecture</span>
+                    <span class="cat-count">5 Questions</span>
+                </button>
+            </div>
+
+            <div class="start-actions">
+                <button id="startQuizBtn" class="btn primary-btn">🚀 Start Quiz</button>
+            </div>
+
+            <!-- Hall of Fame / Leaderboard Preview -->
+            <div class="leaderboard-section">
+                <h3>🏆 Persistent High Scores Leaderboard</h3>
+                <ul id="leaderboardList" class="leaderboard-list">
+                    <li class="muted-item">No quiz scores recorded yet. Complete your first test!</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Screen 2: Active Question Playing View -->
+        <section id="questionScreen" class="card quiz-card hidden">
+            <div class="quiz-status-header">
+                <div class="question-progress-label">
+                    Question <span id="currentQuestionNum">1</span> of <span id="totalQuestionsNum">5</span>
+                </div>
+                <div class="timer-badge" id="timerBadge">
+                    ⏱️ <span id="timerSeconds">20</span>s
+                </div>
+            </div>
+
+            <div class="quiz-track">
+                <div id="quizProgressBar" class="quiz-fill" style="width: 20%;"></div>
+            </div>
+
+            <div class="question-container">
+                <h3 id="questionText">Loading question text...</h3>
+                <div id="optionsContainer" class="options-grid"></div>
+            </div>
+
+            <!-- Explanation Callout -->
+            <div id="explanationBox" class="explanation-box hidden">
+                <div class="exp-title" id="expTitle">💡 Explanation</div>
+                <p id="expText"></p>
+                <div class="next-action-row">
+                    <button id="nextQuestionBtn" class="btn primary-btn">Next Question ➔</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Screen 3: Results & Review Screen -->
+        <section id="resultScreen" class="card quiz-card hidden">
+            <div class="result-header">
+                <div class="score-circle">
+                    <span id="scorePercent">0%</span>
+                    <span class="score-label">Final Score</span>
+                </div>
+                <h2 id="resultGrade">Distinction!</h2>
+                <p id="resultDetails" class="subtitle">You answered 5 out of 5 questions correctly in 45s.</p>
+            </div>
+
+            <!-- Review Questions Accordion -->
+            <div class="review-section">
+                <h3>📝 Comprehensive Answer Review</h3>
+                <div id="reviewContainer" class="review-container"></div>
+            </div>
+
+            <div class="result-actions">
+                <button id="retakeBtn" class="btn primary-btn">🔄 Retake Quiz</button>
+                <button id="homeBtn" class="btn secondary-btn">🏠 Back to Categories</button>
+            </div>
+        </section>
+    </main>
+
+    <footer class="app-footer">
+        <p>MDU Rohtak BCA Lab Assignment | Program 15 &copy; Web Application Development</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

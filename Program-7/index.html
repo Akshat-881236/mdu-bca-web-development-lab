@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Infinite Scrolling Webpage</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header class="app-header">
+        <h1>♾️ Infinite Scrolling Feed</h1>
+        <p>Dynamic Content Stream Powered by JavaScript <code>IntersectionObserver</code> API</p>
+    </header>
+
+    <main class="container">
+        <!-- Feed Stats Toolbar -->
+        <section class="toolbar">
+            <div class="stats-counter">
+                Items Loaded: <strong id="itemCount">0</strong> / <span id="maxCount">40</span>
+            </div>
+            <button id="resetBtn" class="btn-sm">🔄 Reset Feed</button>
+        </section>
+
+        <!-- Cards Container -->
+        <section id="cardsContainer" class="cards-grid" aria-live="polite"></section>
+
+        <!-- Sentinel Trigger Element -->
+        <div id="sentinel" class="sentinel">
+            <div id="loadingIndicator" class="loading-box hidden">
+                <div class="spinner"></div>
+                <p>Loading next batch of content...</p>
+            </div>
+            <div id="endOfFeed" class="end-box hidden">
+                <p>🎉 You have reached the end of the infinite feed!</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Floating Back to Top Button -->
+    <button id="backToTopBtn" class="back-to-top hidden" title="Scroll to Top" aria-label="Scroll to top">
+        ⬆️
+    </button>
+
+    <footer class="app-footer">
+        <p>MDU Rohtak BCA Lab Assignment | Program 07 &copy; Web Application Development</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

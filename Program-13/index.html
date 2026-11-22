@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Responsive Navigation Menu with Dropdowns</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Main Navigation Bar -->
+    <header class="navbar-wrapper">
+        <nav class="navbar" aria-label="Main Navigation">
+            <div class="nav-brand">
+                <a href="#" class="brand-link">
+                    <span class="brand-icon">🎓</span>
+                    <span class="brand-text">MDU Rohtak Portal</span>
+                </a>
+            </div>
+
+            <!-- Hamburger Button for Mobile Viewports -->
+            <button id="hamburgerBtn" class="hamburger-btn" aria-expanded="false" aria-controls="navMenu" aria-label="Toggle navigation menu">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </button>
+
+            <!-- Nav Links & Dropdowns -->
+            <div id="navMenu" class="nav-menu">
+                <ul class="nav-list" role="menubar">
+                    <li class="nav-item" role="none">
+                        <a href="#home" class="nav-link active" role="menuitem">Home</a>
+                    </li>
+
+                    <!-- Dropdown 1: Academic Programs -->
+                    <li class="nav-item dropdown" role="none">
+                        <button class="dropdown-trigger" aria-expanded="false" aria-haspopup="true" role="menuitem">
+                            <span>Academics</span>
+                            <span class="arrow">▾</span>
+                        </button>
+                        <ul class="dropdown-menu" role="menu" aria-label="Academic Programs">
+                            <li role="none"><a href="#bca" class="dropdown-link" role="menuitem">BCA (Comp Applications)</a></li>
+                            <li role="none"><a href="#mca" class="dropdown-link" role="menuitem">MCA (Master of Comp Apps)</a></li>
+                            <li role="none"><a href="#btech" class="dropdown-link" role="menuitem">B.Tech Computer Science</a></li>
+                            <li role="none"><a href="#syllabus" class="dropdown-link" role="menuitem">Syllabus &amp; Curriculum</a></li>
+                        </ul>
+                    </li>
+
+                    <!-- Dropdown 2: Examination & Student Services -->
+                    <li class="nav-item dropdown" role="none">
+                        <button class="dropdown-trigger" aria-expanded="false" aria-haspopup="true" role="menuitem">
+                            <span>Examinations</span>
+                            <span class="arrow">▾</span>
+                        </button>
+                        <ul class="dropdown-menu" role="menu" aria-label="Examination Services">
+                            <li role="none"><a href="#datesheet" class="dropdown-link" role="menuitem">Date Sheet 2026</a></li>
+                            <li role="none"><a href="#results" class="dropdown-link" role="menuitem">Semester Results</a></li>
+                            <li role="none"><a href="#admitcard" class="dropdown-link" role="menuitem">Admit Card Download</a></li>
+                            <li role="none"><a href="#re-eval" class="dropdown-link" role="menuitem">Re-Evaluation Portal</a></li>
+                        </ul>
+                    </li>
+
+                    <!-- Dropdown 3: Research & Campus Life -->
+                    <li class="nav-item dropdown" role="none">
+                        <button class="dropdown-trigger" aria-expanded="false" aria-haspopup="true" role="menuitem">
+                            <span>Campus Life</span>
+                            <span class="arrow">▾</span>
+                        </button>
+                        <ul class="dropdown-menu" role="menu" aria-label="Campus Life">
+                            <li role="none"><a href="#library" class="dropdown-link" role="menuitem">Central Vivekananda Library</a></li>
+                            <li role="none"><a href="#hostel" class="dropdown-link" role="menuitem">Hostel Facilities</a></li>
+                            <li role="none"><a href="#sports" class="dropdown-link" role="menuitem">Sports Complex</a></li>
+                        </ul>
+                    </li>
+
+                    <li class="nav-item" role="none">
+                        <a href="#about" class="nav-link" role="menuitem">About Us</a>
+                    </li>
+                    <li class="nav-item" role="none">
+                        <a href="#contact" class="nav-link" role="menuitem">Contact</a>
+                    </li>
+                </ul>
+
+                <div class="nav-cta">
+                    <button class="btn nav-login-btn">Student Login</button>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content for Visual Demonstration -->
+    <main class="page-content">
+        <section class="hero-section">
+            <div class="hero-inner">
+                <span class="badge">MDU Rohtak BCA Practical 13</span>
+                <h1>Responsive Navigation Architecture</h1>
+                <p>An accessible, multi-tiered responsive navbar with keyboard support, smooth dropdown transitions, and mobile slide-in drawer.</p>
+                <div class="hero-actions">
+                    <a href="#demo" class="btn primary-btn">Explore Features</a>
+                    <a href="#docs" class="btn secondary-btn">View Documentation</a>
+                </div>
+            </div>
+        </section>
+
+        <section class="container features-grid" id="demo">
+            <div class="feature-card">
+                <div class="feature-icon">📱</div>
+                <h3>Mobile Hamburger Drawer</h3>
+                <p>Converts cleanly into an off-canvas drawer on viewport widths below 900px with touch-friendly tap targets.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">♿</div>
+                <h3>WCAG Accessibility</h3>
+                <p>Supports full keyboard navigation (Tab, Arrow keys, ESC) and ARIA attributes for screen readers.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🎯</div>
+                <h3>Click-Outside Dismissal</h3>
+                <p>Dropdown menus automatically collapse when users click anywhere outside or press the Escape key.</p>
+            </div>
+        </section>
+    </main>
+
+    <footer class="app-footer">
+        <p>MDU Rohtak BCA Lab Assignment | Program 13 &copy; Web Application Development</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

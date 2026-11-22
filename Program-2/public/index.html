@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <main class="container">
+        <h1>User Management</h1>
+
+        <section class="form-card" aria-labelledby="form-heading">
+            <h2 id="form-heading">Add a User</h2>
+            <form id="userForm">
+                <label for="name">Name</label>
+                <input id="name" name="name" type="text" maxlength="100" required>
+
+                <label for="email">Email</label>
+                <input id="email" name="email" type="email" maxlength="150" required>
+
+                <button type="submit">Add User</button>
+            </form>
+            <p id="message" role="status" aria-live="polite"></p>
+        </section>
+
+        <section class="users-section" aria-labelledby="users-heading">
+            <div class="users-header">
+                <h2 id="users-heading">Registered Users</h2>
+                <button id="refreshButton" type="button">Refresh</button>
+            </div>
+            <div id="usersList"></div>
+        </section>
+    </main>
+
+    <script src="/script.js"></script>
+</body>
+</html>

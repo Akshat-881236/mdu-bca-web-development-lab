@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Academic CRUD Management System</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header class="app-header">
+        <div class="header-content">
+            <div>
+                <h1>🎓 Student Academic CRUD Portal</h1>
+                <p>Full Database Operations: Create, Read, Update, Delete with Express API</p>
+            </div>
+            <button id="addStudentBtn" class="btn primary-btn">+ Add New Student</button>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Search & Metrics Bar -->
+        <section class="toolbar-card">
+            <div class="search-wrap">
+                <input type="text" id="searchInput" placeholder="Search by name, roll no, course, or email..." aria-label="Search students">
+            </div>
+            <div class="stats-badge">
+                Total Records: <strong id="totalRecords">0</strong>
+            </div>
+        </section>
+
+        <!-- Status Message Banner -->
+        <div id="statusAlert" class="alert hidden" role="alert"></div>
+
+        <!-- Students Table -->
+        <section class="table-card">
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Roll No</th>
+                            <th>Student Name</th>
+                            <th>Course</th>
+                            <th>Semester</th>
+                            <th>Email Address</th>
+                            <th>CGPA</th>
+                            <th class="text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="studentsTableBody">
+                        <tr>
+                            <td colspan="7" class="loading-cell">Loading student records from database...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal Form (Create / Edit) -->
+    <div id="studentModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 id="modalTitle">Add New Student</h3>
+                <button id="closeModalBtn" class="close-btn" aria-label="Close dialog">&times;</button>
+            </div>
+            <form id="studentForm">
+                <input type="hidden" id="studentId">
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="rollNo">Roll Number <span class="req">*</span></label>
+                        <input type="text" id="rollNo" required placeholder="e.g. 23BCA105">
+                    </div>
+                    <div class="form-group">
+                        <label for="name">Full Name <span class="req">*</span></label>
+                        <input type="text" id="name" required placeholder="e.g. Rahul Sharma">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="course">Course <span class="req">*</span></label>
+                        <select id="course" required>
+                            <option value="">Select Course</option>
+                            <option value="BCA">BCA</option>
+                            <option value="MCA">MCA</option>
+                            <option value="B.Tech">B.Tech (CSE)</option>
+                            <option value="B.Sc">B.Sc (Comp Sci)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="semester">Semester <span class="req">*</span></label>
+                        <input type="number" id="semester" min="1" max="8" required placeholder="1 to 8">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="email">Email Address <span class="req">*</span></label>
+                        <input type="email" id="email" required placeholder="e.g. rahul@mdu.ac.in">
+                    </div>
+                    <div class="form-group">
+                        <label for="cgpa">CGPA (0 - 10) <span class="req">*</span></label>
+                        <input type="number" id="cgpa" step="0.01" min="0" max="10" required placeholder="e.g. 8.90">
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" id="cancelModalBtn" class="btn secondary-btn">Cancel</button>
+                    <button type="submit" id="saveStudentBtn" class="btn primary-btn">Save Student</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <footer class="app-footer">
+        <p>MDU Rohtak BCA Lab Assignment | Program 08 &copy; Web Application Development</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

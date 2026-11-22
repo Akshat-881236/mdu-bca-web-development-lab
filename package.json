@@ -1,0 +1,22 @@
+{
+  "name": "mdu-rohtak-bca-web-development-lab",
+  "version": "1.0.0",
+  "description": "Maharshi Dayanand University (MDU Rohtak) BCA Web Application Development Lab Portal & Multi-Server Orchestrator",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "server": "node server.js",
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-session": "^1.19.0",
+    "mongoose": "^9.12.3"
+  },
+  "devDependencies": {
+    "vite": "^5.2.0"
+  }
+}

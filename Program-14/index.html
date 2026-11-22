@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Preferences: Cookies vs LocalStorage</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body data-theme="light" data-font="medium" data-density="comfortable">
+
+    <header class="app-header">
+        <h1>⚙️ User Preferences &amp; State Persistence</h1>
+        <p>Comparative Implementation of HTML5 <code>localStorage</code> &amp; Browser Cookies</p>
+    </header>
+
+    <main class="container">
+        <!-- Settings Control Panel -->
+        <section class="card settings-card">
+            <h2>Customize User Experience</h2>
+            <p class="subtitle">Modify visual and behavior preferences. Settings persist across browser sessions.</p>
+
+            <form id="preferencesForm">
+                <!-- Storage Engine Selection -->
+                <div class="storage-selector-box">
+                    <label class="section-label">Preferred Storage Mechanism:</label>
+                    <div class="radio-group">
+                        <label class="radio-label">
+                            <input type="radio" name="storageEngine" value="localstorage" checked>
+                            <span>HTML5 LocalStorage (Default)</span>
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="storageEngine" value="cookies">
+                            <span>Browser Cookies (Max-Age 30 Days)</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="settings-grid">
+                    <!-- Theme Selector -->
+                    <div class="setting-item">
+                        <label for="themeSelect">Color Theme:</label>
+                        <select id="themeSelect">
+                            <option value="light">☀️ Light Theme (Default)</option>
+                            <option value="dark">🌙 Dark Slate Theme</option>
+                            <option value="sepia">📜 Warm Sepia / Reading</option>
+                            <option value="cyberpunk">⚡ High-Contrast Cyber</option>
+                        </select>
+                    </div>
+
+                    <!-- Font Size Selector -->
+                    <div class="setting-item">
+                        <label for="fontSizeSelect">Font Size:</label>
+                        <select id="fontSizeSelect">
+                            <option value="small">Small (14px)</option>
+                            <option value="medium" selected>Medium (16px - Standard)</option>
+                            <option value="large">Large (18px - Accessible)</option>
+                            <option value="xlarge">Extra Large (20px)</option>
+                        </select>
+                    </div>
+
+                    <!-- UI Density -->
+                    <div class="setting-item">
+                        <label for="densitySelect">Layout Density:</label>
+                        <select id="densitySelect">
+                            <option value="comfortable" selected>Spacious (Comfortable)</option>
+                            <option value="compact">Compact (Data Intensive)</option>
+                        </select>
+                    </div>
+
+                    <!-- Language Locale -->
+                    <div class="setting-item">
+                        <label for="languageSelect">Interface Language:</label>
+                        <select id="languageSelect">
+                            <option value="en" selected>English (EN)</option>
+                            <option value="hi">हिंदी (Hindi - HI)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Toggles -->
+                <div class="toggles-row">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="soundsEnabled" checked>
+                        <span>Enable UI Audio Clicks / Sounds</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="autoSaveEnabled" checked>
+                        <span>Auto-Save Changes Immediately</span>
+                    </label>
+                </div>
+
+                <div class="action-buttons">
+                    <button type="button" id="saveManualBtn" class="btn primary-btn">💾 Save Preferences</button>
+                    <button type="button" id="resetDefaultsBtn" class="btn secondary-btn">🔄 Reset to Defaults</button>
+                </div>
+            </form>
+        </section>
+
+        <!-- Live Preview Sandbox -->
+        <section class="card preview-card">
+            <h3>👁️ Live Preference Dynamic Preview Box</h3>
+            <div id="previewBox" class="preview-box">
+                <h4 id="previewHeading">Welcome to Maharshi Dayanand University Portal</h4>
+                <p id="previewText">
+                    This interactive sample container demonstrates how client preferences immediately take effect on typography, contrast ratios, and container padding across DOM elements without requiring page reload.
+                </p>
+                <div class="sample-actions">
+                    <button class="btn btn-sm">Sample Action Button</button>
+                    <span class="preview-badge">Status: Live Synchronized</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Storage Inspector View -->
+        <section class="card inspector-card">
+            <div class="inspector-header">
+                <h3>🔍 Raw Storage Data Inspector</h3>
+                <div class="inspector-actions">
+                    <button id="clearStorageBtn" class="btn-sm danger-btn">Clear Active Storage</button>
+                </div>
+            </div>
+
+            <div class="inspector-columns">
+                <div class="insp-col">
+                    <h4>📦 LocalStorage Content (Key-Value)</h4>
+                    <pre><code id="localStorageDisplay">Loading...</code></pre>
+                </div>
+                <div class="insp-col">
+                    <h4>🍪 Browser Cookies Content</h4>
+                    <pre><code id="cookiesDisplay">Loading...</code></pre>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="app-footer">
+        <p>MDU Rohtak BCA Lab Assignment | Program 14 &copy; Web Application Development</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
