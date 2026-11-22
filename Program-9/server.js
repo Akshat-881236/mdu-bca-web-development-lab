@@ -230,6 +230,10 @@ app.post("/api/admissions", async (req, res) => {
 });
 
 // Start Server
-app.listen(PORT, () => {
-    console.log(`Program-9 Admission Server running at http://localhost:${PORT}`);
-});
+if (require.main === module) {
+    app.listen(PORT, () => {
+        console.log(`Program-9 Admission Server running at http://localhost:${PORT}`);
+    });
+}
+
+module.exports = app;

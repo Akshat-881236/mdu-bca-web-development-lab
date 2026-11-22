@@ -180,22 +180,36 @@ PROGRAMS_METADATA.forEach(prog => {
     }
 });
 
-// Multi-Server Process Orchestrator State
+// Multi-Server Process Orchestrator State & Vercel Service Bindings
 const subServers = {};
 
-// Initialize sub-server tracker
+// Map program IDs to Vercel service binding environment variables
+const SERVICE_ENV_MAP = {
+    "Program-2": "PROGRAM_2_URL",
+    "Program-5": "PROGRAM_5_URL",
+    "Program-8": "PROGRAM_8_URL",
+    "Program-9": "PROGRAM_9_URL",
+    "Program-10": "PROGRAM_10_URL"
+};
+
+// Initialize sub-server tracker with Vercel Service Binding awareness
 PROGRAMS_METADATA.filter(p => p.hasServer).forEach(p => {
+    const envVar = SERVICE_ENV_MAP[p.id];
+    const boundUrl = envVar ? process.env[envVar] : null;
+    const isBound = Boolean(boundUrl);
+
     subServers[p.id] = {
         id: p.id,
         num: p.num,
         title: p.title,
         port: p.port,
-        liveUrl: `http://localhost:${p.port}`,
-        status: "stopped", // "running", "stopped", "error"
-        pid: null,
+        liveUrl: boundUrl || `http://localhost:${p.port}`,
+        status: isBound ? "running" : "stopped", // "running", "stopped", "error"
+        isVercelService: isBound,
+        pid: isBound ? "Vercel Service" : null,
         child: null,
-        startTime: null,
-        logs: []
+        startTime: isBound ? new Date().toISOString() : null,
+        logs: isBound ? [`[VERCEL SERVICES] Bound to internal service at: ${boundUrl}`] : []
     };
 });
 
@@ -214,6 +228,17 @@ function startSubServer(progId) {
     return new Promise((resolve, reject) => {
         const s = subServers[progId];
         if (!s) return reject(new Error("Unknown server program ID: " + progId));
+        
+        // If bound to a Vercel internal service, it is managed by Vercel
+        const envVar = SERVICE_ENV_MAP[progId];
+        if (s.isVercelService || (envVar && process.env[envVar])) {
+            const boundUrl = process.env[envVar];
+            s.status = "running";
+            s.liveUrl = boundUrl || s.liveUrl;
+            appendLog(progId, `Connected to Vercel internal service binding at ${s.liveUrl}`);
+            return resolve({ message: "Service is managed by Vercel Services (always online)", server: s });
+        }
+
         if (s.status === "running") return resolve({ message: "Server is already running", server: s });
 
         const progDir = path.join(__dirname, progId);

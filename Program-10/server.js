@@ -11,7 +11,7 @@ const PORT = process.env.PORT || 3010;
 // Configuration
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "your_google_client_id_here.apps.googleusercontent.com";
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || "your_google_client_secret_here";
-const GOOGLE_CALLBACK_URL = process.env.GOOGLE_CALLBACK_URL || `http://localhost:${PORT}/auth/google/callback`;
+const GOOGLE_CALLBACK_URL = process.env.GOOGLE_CALLBACK_URL || (process.env.PROGRAM_10_URL ? `${process.env.PROGRAM_10_URL}/auth/google/callback` : `http://localhost:${PORT}/auth/google/callback`);
 const ENABLE_SIMULATED = process.env.ENABLE_SIMULATED_OAUTH !== "false";
 
 // Middleware
@@ -208,6 +208,10 @@ app.post("/auth/logout", (req, res) => {
 });
 
 // Start Server
-app.listen(PORT, () => {
-    console.log(`Program-10 OAuth 2.0 Server running at http://localhost:${PORT}`);
-});
+if (require.main === module) {
+    app.listen(PORT, () => {
+        console.log(`Program-10 OAuth 2.0 Server running at http://localhost:${PORT}`);
+    });
+}
+
+module.exports = app;

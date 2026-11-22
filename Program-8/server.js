@@ -208,6 +208,10 @@ app.delete("/api/students/:id", (req, res) => {
 loadStudents();
 
 // Start Server
-app.listen(PORT, () => {
-    console.log(`Program-8 Student CRUD Server running at http://localhost:${PORT}`);
-});
+if (require.main === module) {
+    app.listen(PORT, () => {
+        console.log(`Program-8 Student CRUD Server running at http://localhost:${PORT}`);
+    });
+}
+
+module.exports = app;

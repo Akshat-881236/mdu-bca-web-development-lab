@@ -115,6 +115,10 @@ app.post("/api/contact", (req, res) => {
 });
 
 // Start Server
-app.listen(PORT, () => {
-    console.log(`Program-5 Contact Server running at http://localhost:${PORT}`);
-});
+if (require.main === module) {
+    app.listen(PORT, () => {
+        console.log(`Program-5 Contact Server running at http://localhost:${PORT}`);
+    });
+}
+
+module.exports = app;

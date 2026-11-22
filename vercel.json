@@ -1,17 +1,69 @@
 {
-  "version": 2,
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "services": {
+    "app": {
+      "root": ".",
+      "framework": "express",
+      "bindings": [
+        {
+          "type": "service",
+          "service": "program-2",
+          "format": "url",
+          "env": "PROGRAM_2_URL"
+        },
+        {
+          "type": "service",
+          "service": "program-5",
+          "format": "url",
+          "env": "PROGRAM_5_URL"
+        },
+        {
+          "type": "service",
+          "service": "program-8",
+          "format": "url",
+          "env": "PROGRAM_8_URL"
+        },
+        {
+          "type": "service",
+          "service": "program-9",
+          "format": "url",
+          "env": "PROGRAM_9_URL"
+        },
+        {
+          "type": "service",
+          "service": "program-10",
+          "format": "url",
+          "env": "PROGRAM_10_URL"
+        }
+      ]
+    },
+    "program-2": {
+      "root": "Program-2",
+      "framework": "express"
+    },
+    "program-5": {
+      "root": "Program-5",
+      "framework": "express"
+    },
+    "program-8": {
+      "root": "Program-8",
+      "framework": "express"
+    },
+    "program-9": {
+      "root": "Program-9",
+      "framework": "express"
+    },
+    "program-10": {
+      "root": "Program-10",
+      "framework": "express"
+    }
+  },
   "rewrites": [
     {
-      "source": "/api/(.*)",
-      "destination": "/api/index.js"
-    },
-    {
-      "source": "/apps/(.*)",
-      "destination": "/api/index.js"
-    },
-    {
       "source": "/(.*)",
-      "destination": "/$1"
+      "destination": {
+        "service": "app"
+      }
     }
   ]
 }
