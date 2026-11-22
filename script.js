@@ -670,17 +670,12 @@ function App() {
         const isLocal = typeof window !== "undefined" && 
             (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
 
-        // Local Development: Point directly to sub-server port
-        if (isLocal && prog.hasServer && prog.port) {
+        // Local Development: Point directly to sub-server port if running
+        if (isLocal && prog.hasServer && prog.port && currentSubServer && currentSubServer.status === "running") {
             return `http://localhost:${prog.port}`;
         }
 
-        // Production / Vercel: If bound to remote service, use bound URL
-        if (currentSubServer && currentSubServer.liveUrl && !currentSubServer.liveUrl.includes("localhost")) {
-            return currentSubServer.liveUrl;
-        }
-
-        // Production / Vercel: Point to web app interface on current host
+        // Production / Vercel: Always point to the public web application URL on current origin
         if (typeof window !== "undefined") {
             return `${window.location.origin}/apps/${prog.id}/index.html`;
         }
@@ -1257,6 +1252,7 @@ function App() {
         }
 
         const isRunning = currentSubServer && currentSubServer.status === "running";
+        const universalUrl = getUniversalLiveUrl(currentProg);
         const logs = (serverLogs[selectedId] && serverLogs[selectedId].length > 0)
             ? serverLogs[selectedId]
             : ((currentSubServer && currentSubServer.logs && currentSubServer.logs.length > 0) ? currentSubServer.logs : []);
@@ -1280,12 +1276,27 @@ function App() {
                             h("span", { style: { color: isRunning ? "var(--success)" : "var(--danger)", fontWeight: "700" } }, isRunning ? "RUNNING" : "STOPPED")
                         )
                     ),
-                    h("div", { className: "server-card-box" },
-                        h("strong", null, "Live Endpoint:"),
-                        isRunning
-                            ? h("a", { href: currentSubServer.liveUrl, target: "_blank", rel: "noreferrer", className: "live-url-link" }, `${currentSubServer.liveUrl} ↗`)
-                            : h("span", { style: { color: "var(--text-muted)" } }, "Start server to activate live URL"),
-                        h("div", { style: { display: "flex", gap: "8px", marginTop: "10px", flexWrap: "wrap" } },
+                    h("div", { className: "server-card-box endpoint-card-box" },
+                        h("div", { className: "endpoint-header" },
+                            h("strong", null, "Live Endpoint:"),
+                            currentSubServer && currentSubServer.isVercelService && h("span", { className: "badge-vercel-service" }, "⚡ Vercel Cloud Cluster")
+                        ),
+                        h("div", { className: "endpoint-value-wrapper" },
+                            isRunning
+                                ? h("a", {
+                                    href: universalUrl,
+                                    target: "_blank",
+                                    rel: "noreferrer",
+                                    className: "live-endpoint-link",
+                                    title: "Open live project application in new tab"
+                                },
+                                    h("span", { className: "endpoint-icon" }, "🌐"),
+                                    h("span", { className: "endpoint-text" }, universalUrl),
+                                    h("span", { className: "endpoint-ext-icon" }, "↗")
+                                )
+                                : h("span", { className: "endpoint-idle" }, "Start server to activate live URL")
+                        ),
+                        h("div", { className: "server-controls-row" },
                             !isRunning ? h("button", {
                                 className: "btn-ctrl start",
                                 onClick: () => handleServerAction("start", selectedId)

@@ -990,7 +990,7 @@ pre[class*="language-"] {
 
 .server-master-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 14px;
     margin-top: 16px;
 }
@@ -999,11 +999,90 @@ pre[class*="language-"] {
     background: var(--bg-surface);
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
-    padding: 14px;
+    padding: 16px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    gap: 10px;
+    gap: 12px;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.endpoint-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.badge-vercel-service {
+    background: rgba(56, 189, 248, 0.12);
+    color: #38bdf8;
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.endpoint-value-wrapper {
+    min-width: 0;
+    width: 100%;
+    overflow: hidden;
+}
+
+.live-endpoint-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--bg-surface-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--primary);
+    text-decoration: none;
+    font-size: 0.82rem;
+    font-family: var(--font-mono);
+    font-weight: 600;
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
+    transition: all var(--transition-fast);
+}
+
+.live-endpoint-link:hover {
+    background: var(--bg-card);
+    border-color: var(--primary);
+    color: #60a5fa;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.endpoint-text {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    word-break: break-all;
+}
+
+.endpoint-icon, .endpoint-ext-icon {
+    flex-shrink: 0;
+}
+
+.endpoint-idle {
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    font-style: italic;
+}
+
+.server-controls-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 6px;
+    flex-wrap: wrap;
 }
 
 .console-log-box {
@@ -1162,6 +1241,15 @@ pre[class*="language-"] {
 
     .readme-viewer {
         padding: 20px 16px;
+    }
+
+    .server-master-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .server-card-box {
+        padding: 12px;
     }
 
     /* Code Editor Icon-Only Responsive Toolbar */
