@@ -12,8 +12,76 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve Root SPA Static Assets
-app.use(express.static(path.join(__dirname)));
+// Load embedded manifest early for serverless runtime resilience
+let embeddedManifest = null;
+try {
+    const manifestCandidates = [
+        path.join(__dirname, "data", "programs-data.json"),
+        path.join(process.cwd(), "data", "programs-data.json"),
+        path.join(__dirname, "..", "data", "programs-data.json")
+    ];
+    for (const mc of manifestCandidates) {
+        if (fs.existsSync(mc)) {
+            embeddedManifest = JSON.parse(fs.readFileSync(mc, "utf8"));
+            break;
+        }
+    }
+} catch (e) {
+    console.warn("Manifest load skipped:", e.message);
+}
+
+// 1. Explicit Root SPA Asset Routes with Enforced MIME Types (Prevents HTML MIME mismatch)
+app.get("/script.js", (req, res) => {
+    res.setHeader("Content-Type", "application/javascript; charset=utf-8");
+    const candidates = [
+        path.join(process.cwd(), "script.js"),
+        path.join(__dirname, "script.js"),
+        path.join(__dirname, "..", "script.js")
+    ];
+    for (const c of candidates) {
+        if (fs.existsSync(c)) {
+            return res.sendFile(c);
+        }
+    }
+    if (embeddedManifest && embeddedManifest._root && embeddedManifest._root["script.js"]) {
+        return res.send(embeddedManifest._root["script.js"]);
+    }
+    res.status(404).send("// script.js not found");
+});
+
+app.get("/style.css", (req, res) => {
+    res.setHeader("Content-Type", "text/css; charset=utf-8");
+    const candidates = [
+        path.join(process.cwd(), "style.css"),
+        path.join(__dirname, "style.css"),
+        path.join(__dirname, "..", "style.css")
+    ];
+    for (const c of candidates) {
+        if (fs.existsSync(c)) {
+            return res.sendFile(c);
+        }
+    }
+    if (embeddedManifest && embeddedManifest._root && embeddedManifest._root["style.css"]) {
+        return res.send(embeddedManifest._root["style.css"]);
+    }
+    res.status(404).send("/* style.css not found */");
+});
+
+// Serve Root SPA Static Assets with explicit MIME types
+const rootStaticDirs = [process.cwd(), __dirname, path.join(__dirname, "..")];
+rootStaticDirs.forEach(dir => {
+    if (fs.existsSync(dir)) {
+        app.use(express.static(dir, {
+            setHeaders: (res, filePath) => {
+                if (filePath.endsWith(".js")) {
+                    res.setHeader("Content-Type", "application/javascript; charset=utf-8");
+                } else if (filePath.endsWith(".css")) {
+                    res.setHeader("Content-Type", "text/css; charset=utf-8");
+                }
+            }
+        }));
+    }
+});
 
 // Program Metadata Master Catalog (Prescribed by MDU Rohtak BCA Lab)
 const PROGRAMS_METADATA = [
@@ -168,24 +236,6 @@ const PROGRAMS_METADATA = [
         port: null
     }
 ];
-
-// Load embedded manifest if available for serverless runtime resilience
-let embeddedManifest = null;
-try {
-    const manifestCandidates = [
-        path.join(__dirname, "data", "programs-data.json"),
-        path.join(process.cwd(), "data", "programs-data.json"),
-        path.join(__dirname, "..", "data", "programs-data.json")
-    ];
-    for (const mc of manifestCandidates) {
-        if (fs.existsSync(mc)) {
-            embeddedManifest = JSON.parse(fs.readFileSync(mc, "utf8"));
-            break;
-        }
-    }
-} catch (e) {
-    console.warn("Manifest load skipped:", e.message);
-}
 
 // Helper: Safely resolve Program directory across Local, Docker, and Vercel Serverless environments
 function resolveProgramDir(progId) {
@@ -833,12 +883,31 @@ app.get("/api/servers/logs/:id", (req, res) => {
     res.status(200).json({ success: true, id: s.id, status: s.status, logs: s.logs });
 });
 
-// 10. Fallback route for SPA
+// 10. Fallback route for SPA (strictly excludes static assets and API routes)
 app.get("*", (req, res, next) => {
-    if (req.path.startsWith("/api") || req.path.startsWith("/apps")) {
-        return next();
+    // If request is for an API, an app runner, or contains a file extension (e.g. .js, .css, .json, .png), DO NOT return index.html
+    if (req.path.startsWith("/api") || req.path.startsWith("/apps") || req.path.startsWith("/data") || req.path.includes(".")) {
+        return res.status(404).send(`Cannot GET ${req.path}`);
     }
-    res.sendFile(path.join(__dirname, "index.html"));
+
+    const htmlCandidates = [
+        path.join(process.cwd(), "index.html"),
+        path.join(__dirname, "index.html"),
+        path.join(__dirname, "..", "index.html")
+    ];
+    for (const hc of htmlCandidates) {
+        if (fs.existsSync(hc)) {
+            res.setHeader("Content-Type", "text/html; charset=utf-8");
+            return res.sendFile(hc);
+        }
+    }
+
+    if (embeddedManifest && embeddedManifest._root && embeddedManifest._root["index.html"]) {
+        res.setHeader("Content-Type", "text/html; charset=utf-8");
+        return res.send(embeddedManifest._root["index.html"]);
+    }
+
+    res.status(404).send("index.html not found");
 });
 
 // Clean termination of all spawned child processes on exit
