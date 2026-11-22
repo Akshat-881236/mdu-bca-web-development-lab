@@ -471,20 +471,68 @@ function App() {
 
         fetch(`/api/programs/${selectedId}`)
             .then(res => res.json())
-            .then(json => {
-                if (isMounted && json.success) {
-                    setProgramDetail(json.data);
-                    if (json.data.files && json.data.files.length > 0) {
+            .then(async json => {
+                if (isMounted) {
+                    let data = json && json.success ? json.data : null;
+                    if (!data) {
+                        const matched = programs.find(p => p.id === selectedId) || { id: selectedId, title: selectedId };
+                        data = { ...matched, readme: "", tree: [], files: [] };
+                    }
+
+                    // Resilient Fallback 1: If Readme is empty, fetch statically via /apps/:id/README.md or /:id/README.md
+                    if (!data.readme || data.readme.trim().length === 0) {
+                        try {
+                            let rRes = await fetch(`/apps/${selectedId}/README.md`);
+                            if (!rRes.ok) rRes = await fetch(`/${selectedId}/README.md`);
+                            if (rRes.ok) {
+                                data.readme = await rRes.text();
+                            }
+                        } catch (e) {}
+                    }
+
+                    // Resilient Fallback 2: If files or readme still missing, load from /data/programs-data.json
+                    if (!data.readme || !data.files || data.files.length === 0) {
+                        try {
+                            const manifestRes = await fetch("/data/programs-data.json");
+                            if (manifestRes.ok) {
+                                const manifest = await manifestRes.json();
+                                if (manifest[selectedId]) {
+                                    if (!data.readme && manifest[selectedId].readme) data.readme = manifest[selectedId].readme;
+                                    if ((!data.files || data.files.length === 0) && manifest[selectedId].files) data.files = manifest[selectedId].files;
+                                    if ((!data.tree || data.tree.length === 0) && manifest[selectedId].tree) data.tree = manifest[selectedId].tree;
+                                }
+                            }
+                        } catch (e) {}
+                    }
+
+                    setProgramDetail(data);
+                    if (data.files && data.files.length > 0) {
                         // Keep current active file if it belongs to this program, else pick default
-                        const exists = activeFile && json.data.files.some(f => f.path === activeFile);
+                        const exists = activeFile && data.files.some(f => f.path === activeFile);
                         if (!exists) {
-                            const defaultFile = json.data.files.find(f => f.name === "server.js" || f.name === "script.js" || f.name === "index.html") || json.data.files[0];
+                            const defaultFile = data.files.find(f => f.name === "server.js" || f.name === "script.js" || f.name === "index.html") || data.files[0];
                             setActiveFile(defaultFile.path);
                         }
                     }
                 }
             })
-            .catch(err => console.error("Detail fetch error:", err))
+            .catch(async err => {
+                console.error("Detail fetch error:", err);
+                if (isMounted) {
+                    try {
+                        const manifestRes = await fetch("/data/programs-data.json");
+                        if (manifestRes.ok) {
+                            const manifest = await manifestRes.json();
+                            if (manifest[selectedId]) {
+                                setProgramDetail(manifest[selectedId]);
+                                if (manifest[selectedId].files && manifest[selectedId].files.length > 0) {
+                                    setActiveFile(manifest[selectedId].files[0].path);
+                                }
+                            }
+                        }
+                    } catch (e) {}
+                }
+            })
             .finally(() => {
                 if (isMounted) setLoadingDetail(false);
             });
@@ -492,7 +540,7 @@ function App() {
         return () => { isMounted = false; };
     }, [selectedId]);
 
-    // 9. Fetch File Content When Active File Changes
+    // 9. Fetch File Content When Active File Changes (with Resilient Static Fallback)
     useEffect(() => {
         if (!selectedId || !activeFile) return;
 
@@ -502,16 +550,64 @@ function App() {
 
         fetch(`/api/programs/${selectedId}/file?path=${encodeURIComponent(activeFile)}`)
             .then(res => res.json())
-            .then(json => {
+            .then(async json => {
                 if (json.success) {
                     setFileContent(json.content);
                     setEditContent(json.content);
                 } else {
+                    // Fallback 1: Attempt direct static fetch from /apps/:id/
+                    try {
+                        const staticRes = await fetch(`/apps/${selectedId}/${activeFile}`);
+                        if (staticRes.ok) {
+                            const txt = await staticRes.text();
+                            setFileContent(txt);
+                            setEditContent(txt);
+                            return;
+                        }
+                    } catch (e) {}
+
+                    // Fallback 2: Check embedded data manifest
+                    try {
+                        const manifestRes = await fetch("/data/programs-data.json");
+                        if (manifestRes.ok) {
+                            const manifest = await manifestRes.json();
+                            if (manifest[selectedId] && manifest[selectedId].fileContents && manifest[selectedId].fileContents[activeFile] !== undefined) {
+                                const txt = manifest[selectedId].fileContents[activeFile];
+                                setFileContent(txt);
+                                setEditContent(txt);
+                                return;
+                            }
+                        }
+                    } catch (e) {}
+
                     setFileContent(`// Error reading file: ${json.message}`);
                     setEditContent("");
                 }
             })
-            .catch(err => {
+            .catch(async err => {
+                try {
+                    const staticRes = await fetch(`/apps/${selectedId}/${activeFile}`);
+                    if (staticRes.ok) {
+                        const txt = await staticRes.text();
+                        setFileContent(txt);
+                        setEditContent(txt);
+                        return;
+                    }
+                } catch (e) {}
+
+                try {
+                    const manifestRes = await fetch("/data/programs-data.json");
+                    if (manifestRes.ok) {
+                        const manifest = await manifestRes.json();
+                        if (manifest[selectedId] && manifest[selectedId].fileContents && manifest[selectedId].fileContents[activeFile] !== undefined) {
+                            const txt = manifest[selectedId].fileContents[activeFile];
+                            setFileContent(txt);
+                            setEditContent(txt);
+                            return;
+                        }
+                    }
+                } catch (e) {}
+
                 setFileContent(`// Failed to fetch file content: ${err.message}`);
                 setEditContent("");
             })
@@ -567,12 +663,28 @@ function App() {
         return isFileEditable(activeFile, currentProg && currentProg.hasServer);
     }, [activeFile, currentProg]);
 
-    // Universal Live URL Resolver (Works for ALL 15 Programs)
+    // Universal Live URL Resolver: Dynamically resolves for Development and Production
     const getUniversalLiveUrl = (prog) => {
         if (!prog) return "#";
-        if (prog.hasServer && prog.port) {
+
+        const isLocal = typeof window !== "undefined" && 
+            (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+
+        // Local Development: Point directly to sub-server port
+        if (isLocal && prog.hasServer && prog.port) {
             return `http://localhost:${prog.port}`;
         }
+
+        // Production / Vercel: If bound to remote service, use bound URL
+        if (currentSubServer && currentSubServer.liveUrl && !currentSubServer.liveUrl.includes("localhost")) {
+            return currentSubServer.liveUrl;
+        }
+
+        // Production / Vercel: Point to web app interface on current host
+        if (typeof window !== "undefined") {
+            return `${window.location.origin}/apps/${prog.id}/index.html`;
+        }
+
         return `/apps/${prog.id}/index.html`;
     };
 
@@ -989,8 +1101,8 @@ function App() {
                         className: "btn-github-link",
                         title: "Inspect source code on GitHub"
                     },
-                        h("span", null, "🐙"),
-                        h("span", null, "View on GitHub ↗")
+                        h("span", { className: "btn-icon" }, "🐙"),
+                        h("span", { className: "desktop-only-inline" }, " View on GitHub ↗")
                     ),
 
                     // Inbuilt Editor Toggle Button (Only for Editable Frontend / .env Files)
@@ -998,16 +1110,26 @@ function App() {
                         className: `btn-ctrl ${isEditing ? "stop" : "start"}`,
                         onClick: () => setIsEditing(!isEditing),
                         title: isEditing ? "Switch back to Syntax Highlighted View" : "Edit this file in browser"
-                    }, isEditing ? "👁️ View Highlighted" : "✏️ Edit File") : h("span", {
+                    },
+                        h("span", { className: "btn-icon" }, isEditing ? "👁️" : "✏️"),
+                        h("span", { className: "desktop-only-inline" }, isEditing ? " View Code" : " Edit File")
+                    ) : h("span", {
                         className: "editor-badge readonly",
                         title: "Protected file: Only Frontend files and .env are editable"
-                    }, "🔒 Core Server (Read Only)"),
+                    },
+                        h("span", { className: "btn-icon" }, "🔒"),
+                        h("span", { className: "desktop-only-inline" }, " Read Only")
+                    ),
 
                     // Copy Code
                     h("button", {
                         className: "btn-copy",
-                        onClick: copyCodeToClipboard
-                    }, copySuccess ? "✓ Copied!" : "📋 Copy Code")
+                        onClick: copyCodeToClipboard,
+                        title: copySuccess ? "Copied to clipboard!" : "Copy code"
+                    },
+                        h("span", { className: "btn-icon" }, copySuccess ? "✓" : "📋"),
+                        h("span", { className: "desktop-only-inline" }, copySuccess ? " Copied!" : " Copy Code")
+                    )
                 )
             ),
 
@@ -1016,32 +1138,47 @@ function App() {
                 h("div", { className: "editor-status-left" },
                     h("span", { className: "editor-badge editable" }, "Editable Mode"),
                     h("span", null, `File: ${activeFile}`),
-                    h("span", null, `• ${editContent.split("\n").length} lines`),
-                    h("span", null, `• ${editContent.length} chars`)
+                    h("span", { className: "desktop-only-inline" }, `• ${editContent.split("\n").length} lines`),
+                    h("span", { className: "desktop-only-inline" }, `• ${editContent.length} chars`)
                 ),
                 h("div", { className: "editor-actions" },
                     h("button", {
                         className: "btn-save-code",
                         disabled: isSaving,
-                        onClick: () => handleSaveFile(false)
-                    }, isSaving ? "Saving..." : "💾 Save Changes"),
+                        onClick: () => handleSaveFile(false),
+                        title: "Save changes to file"
+                    },
+                        h("span", { className: "btn-icon" }, isSaving ? "⏳" : "💾"),
+                        h("span", { className: "desktop-only-inline" }, isSaving ? " Saving..." : " Save")
+                    ),
 
                     currentProg && currentProg.hasServer && h("button", {
                         className: "btn-restart-server",
                         disabled: isSaving,
                         onClick: () => handleSaveFile(true),
                         title: "Save changes and immediately restart Node.js server with new configuration"
-                    }, isSaving ? "Saving..." : "⚡ Save & Restart Server"),
+                    },
+                        h("span", { className: "btn-icon" }, isSaving ? "⏳" : "⚡"),
+                        h("span", { className: "desktop-only-inline" }, isSaving ? " Saving..." : " Save & Restart")
+                    ),
 
                     h("button", {
                         className: "btn-console",
-                        onClick: () => setEditContent(fileContent)
-                    }, "↺ Reset"),
+                        onClick: () => setEditContent(fileContent),
+                        title: "Reset file content"
+                    },
+                        h("span", { className: "btn-icon" }, "↺"),
+                        h("span", { className: "desktop-only-inline" }, " Reset")
+                    ),
 
                     h("button", {
                         className: "btn-console",
-                        onClick: () => setIsEditing(false)
-                    }, "✕ Close Editor")
+                        onClick: () => setIsEditing(false),
+                        title: "Close Editor"
+                    },
+                        h("span", { className: "btn-icon" }, "✕"),
+                        h("span", { className: "desktop-only-inline" }, " Close")
+                    )
                 )
             ),
 

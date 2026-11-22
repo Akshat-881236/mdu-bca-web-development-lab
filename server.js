@@ -169,16 +169,52 @@ const PROGRAMS_METADATA = [
     }
 ];
 
+// Load embedded manifest if available for serverless runtime resilience
+let embeddedManifest = null;
+try {
+    const manifestCandidates = [
+        path.join(__dirname, "data", "programs-data.json"),
+        path.join(process.cwd(), "data", "programs-data.json"),
+        path.join(__dirname, "..", "data", "programs-data.json")
+    ];
+    for (const mc of manifestCandidates) {
+        if (fs.existsSync(mc)) {
+            embeddedManifest = JSON.parse(fs.readFileSync(mc, "utf8"));
+            break;
+        }
+    }
+} catch (e) {
+    console.warn("Manifest load skipped:", e.message);
+}
+
+// Helper: Safely resolve Program directory across Local, Docker, and Vercel Serverless environments
+function resolveProgramDir(progId) {
+    const candidates = [
+        path.join(process.cwd(), progId),
+        path.join(__dirname, progId),
+        path.join(__dirname, "..", progId),
+        path.resolve(progId)
+    ];
+    for (const c of candidates) {
+        if (fs.existsSync(c)) return c;
+    }
+    return path.join(process.cwd(), progId);
+}
+
 // Mount static file serving for all programs (for interactive live runners)
 PROGRAMS_METADATA.forEach(prog => {
-    const progPath = path.join(__dirname, prog.id);
+    const progPath = resolveProgramDir(prog.id);
     const publicPath = path.join(progPath, "public");
     if (fs.existsSync(publicPath)) {
         app.use(`/apps/${prog.id}`, express.static(publicPath));
-    } else if (fs.existsSync(progPath)) {
+    }
+    if (fs.existsSync(progPath)) {
         app.use(`/apps/${prog.id}`, express.static(progPath));
     }
+    app.use(`/${prog.id}`, express.static(progPath));
 });
+
+app.use("/data", express.static(path.join(__dirname, "data")));
 
 // Multi-Server Process Orchestrator State & Vercel Service Bindings
 const subServers = {};
@@ -397,11 +433,14 @@ function getFolderTree(dirPath, relativeTo) {
 
 // 1. Get List of all 15 Programs
 app.get("/api/programs", (req, res) => {
+    const isProd = Boolean(process.env.NODE_ENV === "production" || process.env.VERCEL || (req.hostname && !req.hostname.includes("localhost")));
+    const hostUrl = `${req.protocol}://${req.get("host")}`;
+
     const list = PROGRAMS_METADATA.map(p => {
         const serverInfo = p.hasServer && subServers[p.id] ? {
             status: subServers[p.id].status,
             port: subServers[p.id].port,
-            liveUrl: subServers[p.id].liveUrl,
+            liveUrl: isProd ? `${hostUrl}/apps/${p.id}/index.html` : subServers[p.id].liveUrl,
             pid: subServers[p.id].pid,
             startTime: subServers[p.id].startTime
         } : null;
@@ -409,9 +448,9 @@ app.get("/api/programs", (req, res) => {
         return {
             ...p,
             serverInfo,
-            liveAppUrl: p.hasServer && serverInfo && serverInfo.status === "running" 
+            liveAppUrl: p.hasServer && serverInfo && serverInfo.status === "running" && serverInfo.liveUrl && !serverInfo.liveUrl.includes("localhost")
                 ? serverInfo.liveUrl 
-                : `/apps/${p.id}/index.html`
+                : (isProd ? `${hostUrl}/apps/${p.id}/index.html` : (serverInfo && serverInfo.liveUrl ? serverInfo.liveUrl : `/apps/${p.id}/index.html`))
         };
     });
 
@@ -427,35 +466,60 @@ app.get("/api/programs/:id", (req, res) => {
         return res.status(404).json({ success: false, message: `Program ${progId} not found` });
     }
 
-    const progDir = path.join(__dirname, progId);
-    if (!fs.existsSync(progDir)) {
-        return res.status(404).json({ success: false, message: `Directory for ${progId} does not exist` });
-    }
-
-    // Read Readme.md
+    const progDir = resolveProgramDir(progId);
     let readmeContent = "";
-    const readmePath = path.join(progDir, "README.md");
-    if (fs.existsSync(readmePath)) {
-        readmeContent = fs.readFileSync(readmePath, "utf8");
+    let tree = [];
+    let fileList = [];
+
+    if (fs.existsSync(progDir)) {
+        // Read README.md (with case-insensitive fallbacks)
+        const readmeCandidates = [
+            path.join(progDir, "README.md"),
+            path.join(progDir, "readme.md"),
+            path.join(progDir, "Readme.md")
+        ];
+        for (const rp of readmeCandidates) {
+            if (fs.existsSync(rp)) {
+                readmeContent = fs.readFileSync(rp, "utf8");
+                break;
+            }
+        }
+
+        // Generate folder structure
+        tree = getFolderTree(progDir, progDir);
+
+        // List all files
+        function collectFiles(nodes) {
+            nodes.forEach(n => {
+                if (n.type === "file") fileList.push(n);
+                if (n.children) collectFiles(n.children);
+            });
+        }
+        collectFiles(tree);
     }
 
-    // Generate folder structure
-    const tree = getFolderTree(progDir, progDir);
-
-    // List all files
-    const fileList = [];
-    function collectFiles(nodes) {
-        nodes.forEach(n => {
-            if (n.type === "file") fileList.push(n);
-            if (n.children) collectFiles(n.children);
-        });
+    // Serverless Fallback from Embedded Manifest
+    if ((!readmeContent || fileList.length === 0) && embeddedManifest && embeddedManifest[progId]) {
+        if (!readmeContent && embeddedManifest[progId].readme) {
+            readmeContent = embeddedManifest[progId].readme;
+        }
+        if (fileList.length === 0 && embeddedManifest[progId].files) {
+            fileList = embeddedManifest[progId].files;
+            tree = embeddedManifest[progId].tree || [];
+        }
     }
-    collectFiles(tree);
+
+    if (!fs.existsSync(progDir) && (!embeddedManifest || !embeddedManifest[progId])) {
+        return res.status(404).json({ success: false, message: `Directory for ${progId} does not exist at ${progDir}` });
+    }
+
+    const isProd = Boolean(process.env.NODE_ENV === "production" || process.env.VERCEL || (req.hostname && !req.hostname.includes("localhost")));
+    const hostUrl = `${req.protocol}://${req.get("host")}`;
 
     const serverInfo = progMeta.hasServer && subServers[progId] ? {
         status: subServers[progId].status,
         port: subServers[progId].port,
-        liveUrl: subServers[progId].liveUrl,
+        liveUrl: isProd ? `${hostUrl}/apps/${progId}/index.html` : subServers[progId].liveUrl,
         pid: subServers[progId].pid,
         logs: subServers[progId].logs
     } : null;
@@ -468,9 +532,9 @@ app.get("/api/programs/:id", (req, res) => {
             readme: readmeContent,
             tree,
             files: fileList,
-            liveAppUrl: progMeta.hasServer && serverInfo && serverInfo.status === "running"
+            liveAppUrl: progMeta.hasServer && serverInfo && serverInfo.status === "running" && serverInfo.liveUrl && !serverInfo.liveUrl.includes("localhost")
                 ? serverInfo.liveUrl
-                : `/apps/${progId}/index.html`
+                : (isProd ? `${hostUrl}/apps/${progId}/index.html` : `/apps/${progId}/index.html`)
         }
     });
 });
@@ -484,8 +548,16 @@ app.get("/api/programs/:id/file", (req, res) => {
         return res.status(400).json({ success: false, message: "Query parameter 'path' is required" });
     }
 
-    const progDir = path.join(__dirname, progId);
-    const targetFile = path.resolve(progDir, filePath);
+    const progDir = resolveProgramDir(progId);
+    let targetFile = path.resolve(progDir, filePath);
+
+    // Check fallback inside public/ subdirectory if not directly found
+    if (!fs.existsSync(targetFile)) {
+        const publicCandidate = path.resolve(progDir, "public", filePath);
+        if (fs.existsSync(publicCandidate)) {
+            targetFile = publicCandidate;
+        }
+    }
 
     // Security: Ensure path does not escape program folder
     if (!targetFile.startsWith(progDir)) {
@@ -493,7 +565,27 @@ app.get("/api/programs/:id/file", (req, res) => {
     }
 
     if (!fs.existsSync(targetFile)) {
-        return res.status(404).json({ success: false, message: "File not found" });
+        // Fallback from embedded manifest for serverless execution
+        if (embeddedManifest && embeddedManifest[progId] && embeddedManifest[progId].fileContents) {
+            const contents = embeddedManifest[progId].fileContents;
+            const content = contents[filePath] !== undefined 
+                ? contents[filePath] 
+                : (contents["public/" + filePath] !== undefined 
+                    ? contents["public/" + filePath] 
+                    : (contents[filePath.replace(/^public\//, "")] !== undefined 
+                        ? contents[filePath.replace(/^public\//, "")] 
+                        : null));
+            if (content !== null) {
+                const ext = path.extname(filePath).toLowerCase().replace(".", "");
+                return res.status(200).json({
+                    success: true,
+                    path: filePath,
+                    ext: ext || "txt",
+                    content
+                });
+            }
+        }
+        return res.status(404).json({ success: false, message: `File '${filePath}' not found in ${progId}` });
     }
 
     try {
@@ -522,8 +614,13 @@ app.post("/api/programs/:id/file", (req, res) => {
         return res.status(400).json({ success: false, message: "Parameter 'content' is required" });
     }
 
-    const progDir = path.join(__dirname, progId);
-    const targetFile = path.resolve(progDir, filePath);
+    const progDir = resolveProgramDir(progId);
+    let targetFile = path.resolve(progDir, filePath);
+
+    if (!fs.existsSync(targetFile)) {
+        const publicFallback = path.resolve(progDir, "public", filePath);
+        if (fs.existsSync(publicFallback)) targetFile = publicFallback;
+    }
 
     // Security: Ensure path does not escape program folder
     if (!targetFile.startsWith(progDir)) {
@@ -572,45 +669,64 @@ app.get("/api/search-code", (req, res) => {
     const lowerQ = query.toLowerCase();
 
     PROGRAMS_METADATA.forEach(prog => {
-        const progDir = path.join(__dirname, prog.id);
-        if (!fs.existsSync(progDir)) return;
-
-        function scanDir(dir) {
-            try {
-                const entries = fs.readdirSync(dir, { withFileTypes: true });
-                for (const entry of entries) {
-                    if (entry.name === "node_modules" || entry.name === ".git") continue;
-                    const fullPath = path.join(dir, entry.name);
-                    if (entry.isDirectory()) {
-                        scanDir(fullPath);
-                    } else if (entry.isFile()) {
-                        const ext = path.extname(entry.name).toLowerCase();
-                        if ([".js", ".html", ".css", ".json", ".md", ".env", ".sql"].includes(ext) || entry.name === ".env") {
-                            try {
-                                const relPath = path.relative(progDir, fullPath).replace(/\\/g, "/");
-                                const fileContent = fs.readFileSync(fullPath, "utf8");
-                                const lines = fileContent.split("\n");
-                                lines.forEach((line, idx) => {
-                                    if (line.toLowerCase().includes(lowerQ)) {
-                                        results.push({
-                                            progId: prog.id,
-                                            progNum: prog.num,
-                                            progTitle: prog.title,
-                                            progType: prog.type,
-                                            file: relPath,
-                                            lineNum: idx + 1,
-                                            snippet: line.trim().slice(0, 160)
-                                        });
-                                    }
-                                });
-                            } catch (e) {}
+        const progDir = resolveProgramDir(prog.id);
+        if (fs.existsSync(progDir)) {
+            function scanDir(dir) {
+                try {
+                    const entries = fs.readdirSync(dir, { withFileTypes: true });
+                    for (const entry of entries) {
+                        if (entry.name === "node_modules" || entry.name === ".git") continue;
+                        const fullPath = path.join(dir, entry.name);
+                        if (entry.isDirectory()) {
+                            scanDir(fullPath);
+                        } else if (entry.isFile()) {
+                            const ext = path.extname(entry.name).toLowerCase();
+                            if ([".js", ".html", ".css", ".json", ".md", ".env", ".sql"].includes(ext) || entry.name === ".env") {
+                                try {
+                                    const relPath = path.relative(progDir, fullPath).replace(/\\/g, "/");
+                                    const fileContent = fs.readFileSync(fullPath, "utf8");
+                                    const lines = fileContent.split("\n");
+                                    lines.forEach((line, idx) => {
+                                        if (line.toLowerCase().includes(lowerQ)) {
+                                            results.push({
+                                                progId: prog.id,
+                                                progNum: prog.num,
+                                                progTitle: prog.title,
+                                                progType: prog.type,
+                                                file: relPath,
+                                                lineNum: idx + 1,
+                                                snippet: line.trim().slice(0, 160)
+                                            });
+                                        }
+                                    });
+                                } catch (e) {}
+                            }
                         }
                     }
-                }
-            } catch (e) {}
+                } catch (e) {}
+            }
+            scanDir(progDir);
+        } else if (embeddedManifest && embeddedManifest[prog.id] && embeddedManifest[prog.id].fileContents) {
+            const contents = embeddedManifest[prog.id].fileContents;
+            Object.keys(contents).forEach(relPath => {
+                const text = contents[relPath];
+                const lines = text.split("\n");
+                lines.forEach((line, idx) => {
+                    if (results.length >= 100) return;
+                    if (line.toLowerCase().includes(lowerQ)) {
+                        results.push({
+                            progId: prog.id,
+                            progNum: prog.num,
+                            progTitle: prog.title,
+                            progType: prog.type,
+                            file: relPath,
+                            lineNum: idx + 1,
+                            snippet: line.trim().slice(0, 160)
+                        });
+                    }
+                });
+            });
         }
-
-        scanDir(progDir);
     });
 
     res.status(200).json({

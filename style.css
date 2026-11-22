@@ -1103,6 +1103,7 @@ pre[class*="language-"] {
 /* Show/Hide Utility Classes */
 .desktop-only { display: inline-flex !important; }
 .mobile-only { display: none !important; }
+.desktop-only-inline { display: inline !important; }
 
 /* ---------------- Tablets & Mobile Breakpoint (< 1024px) ---------------- */
 @media (max-width: 1024px) {
@@ -1134,6 +1135,8 @@ pre[class*="language-"] {
 
 /* ---------------- Small Tablets & Phablets (< 768px) ---------------- */
 @media (max-width: 768px) {
+    .desktop-only-inline { display: none !important; }
+
     .app-header {
         padding: 0 14px;
         height: 60px;
@@ -1159,6 +1162,60 @@ pre[class*="language-"] {
 
     .readme-viewer {
         padding: 20px 16px;
+    }
+
+    /* Code Editor Icon-Only Responsive Toolbar */
+    .code-toolbar {
+        padding: 6px 10px;
+        gap: 6px;
+        flex-wrap: nowrap;
+    }
+
+    .file-tabs-scroll {
+        flex: 1;
+        min-width: 0;
+        max-width: none;
+        scrollbar-width: none;
+    }
+    .file-tabs-scroll::-webkit-scrollbar {
+        display: none;
+    }
+
+    .code-actions {
+        flex-shrink: 0;
+        gap: 6px;
+    }
+
+    .btn-github-link,
+    .btn-ctrl,
+    .btn-copy {
+        padding: 6px 9px;
+        min-width: 32px;
+        height: 32px;
+        justify-content: center;
+        border-radius: 6px;
+        font-size: 0.85rem;
+    }
+
+    .editor-status-bar {
+        padding: 8px 10px;
+        gap: 8px;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .editor-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        width: 100%;
+    }
+
+    .btn-save-code,
+    .btn-restart-server,
+    .btn-console {
+        padding: 5px 8px;
+        font-size: 0.75rem;
     }
 }
 
@@ -1203,6 +1260,25 @@ pre[class*="language-"] {
 
     .live-url-link.prominent {
         padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+
+    .code-toolbar {
+        padding: 4px 6px;
+        gap: 4px;
+    }
+
+    .file-tab {
+        padding: 4px 8px;
+        font-size: 0.72rem;
+    }
+
+    .btn-github-link,
+    .btn-ctrl,
+    .btn-copy {
+        padding: 4px 6px;
+        min-width: 28px;
+        height: 28px;
         font-size: 0.8rem;
     }
 }
