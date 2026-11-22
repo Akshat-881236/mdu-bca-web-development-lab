@@ -18,45 +18,6 @@ const THEMES = [
 // GitHub Repository Base URL
 const GITHUB_REPO_URL = "https://github.com/Akshat-881236/mdu-bca-web-development-lab";
 
-// Creator Ecosystem & Portfolio Projects
-const CREATOR_ECOSYSTEM = [
-    {
-        name: "Codagenda — AI Web IDE",
-        badge: "AI IDE",
-        desc: "Autonomous prompt-to-code development environment with real-time SSE streaming.",
-        url: "https://codagenda.akshatpsd2005.workers.dev/",
-        icon: "⚡"
-    },
-    {
-        name: "Akshat Network Hub",
-        badge: "Central Hub",
-        desc: "Unified developer portfolio, tools directory, and personal software showcase.",
-        url: "https://akshat-881236.github.io/AkshatNetworkHub/",
-        icon: "🌐"
-    },
-    {
-        name: "DPGNotes Academic Portal",
-        badge: "Student Hub",
-        desc: "Curriculum-aligned BCA study notes, practical guides, PYQs, and cover generator.",
-        url: "https://dpgnotes.web.app/",
-        icon: "🎓"
-    },
-    {
-        name: "TrackerJS Client Analytics",
-        badge: "Utility",
-        desc: "Lightweight client-side session analysis and user interaction tracing library.",
-        url: "https://akshat-881236.github.io/TrackerJS/",
-        icon: "📊"
-    },
-    {
-        name: "Akshat GitHub Profile",
-        badge: "Open Source",
-        desc: "Explore public repositories, web experiments, and lab practical manuals.",
-        url: "https://github.com/Akshat-881236",
-        icon: "🐙"
-    }
-];
-
 // Synonym Dictionary for NLP Query Expansion
 const NLP_SYNONYMS = {
     "api": ["rest", "endpoint", "fetch", "json", "express", "get", "post", "http"],
@@ -754,29 +715,6 @@ function App() {
                 )
             ),
             h("div", { className: "header-right" },
-                // Creator Ecosystem Links Pill (Desktop)
-                h("a", {
-                    href: "https://codagenda.akshatpsd2005.workers.dev/",
-                    target: "_blank",
-                    rel: "noreferrer",
-                    className: "ecosystem-nav-pill desktop-only",
-                    title: "Codagenda — AI Web IDE by Akshat Prasad"
-                },
-                    h("span", null, "⚡"),
-                    h("span", null, "Codagenda IDE ↗")
-                ),
-
-                h("a", {
-                    href: "https://dpgnotes.web.app/",
-                    target: "_blank",
-                    rel: "noreferrer",
-                    className: "ecosystem-nav-pill desktop-only",
-                    title: "DPGNotes Academic Portal"
-                },
-                    h("span", null, "🎓"),
-                    h("span", null, "DPGNotes ↗")
-                ),
-
                 // Active Server Cluster Pill
                 h("div", {
                     className: "server-cluster-pill",
@@ -1301,37 +1239,6 @@ function App() {
         );
     };
 
-    // 10. Creator Ecosystem & Academic Backlinks Footer
-    const renderFooter = () => {
-        return h("footer", { className: "ecosystem-footer" },
-            h("div", { className: "ecosystem-footer-title" },
-                h("span", null, "🌐"),
-                h("span", null, "Developer Ecosystem & Academic Backlinks")
-            ),
-            h("p", { className: "ecosystem-footer-subtitle" },
-                "Created by Akshat Prasad — Bachelor of Computer Applications (BCA), DPGSTM / MDU Rohtak. Explore interconnected AI developer tools, student academic platforms, and research utilities:"
-            ),
-            h("div", { className: "ecosystem-grid" },
-                CREATOR_ECOSYSTEM.map(proj => (
-                    h("a", {
-                        key: proj.name,
-                        href: proj.url,
-                        target: "_blank",
-                        rel: "noreferrer",
-                        className: "ecosystem-card"
-                    },
-                        h("div", { className: "ecosystem-card-title" },
-                            h("span", null, proj.icon),
-                            h("span", null, proj.name),
-                            h("span", { style: { fontSize: "0.65rem", padding: "1px 6px", background: "var(--bg-surface)", borderRadius: "4px", color: "var(--text-muted)" } }, proj.badge)
-                        ),
-                        h("div", { className: "ecosystem-card-desc" }, proj.desc)
-                    )
-                ))
-            )
-        );
-    };
-
     // --------------------------------------------------------------------------
     // Main App Shell
     // --------------------------------------------------------------------------
@@ -1366,8 +1273,7 @@ function App() {
                     activeTab === "structure" && renderStructureTab(),
                     activeTab === "orchestrator" && renderOrchestratorTab(),
                     activeTab === "runner" && renderRunnerTab()
-                ),
-                renderFooter()
+                )
             )
         )
     );

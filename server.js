@@ -714,10 +714,14 @@ function cleanup() {
 process.on("SIGINT", cleanup);
 process.on("SIGTERM", cleanup);
 
-app.listen(PORT, () => {
-    console.log(`================================================================`);
-    console.log(`🏛️  MDU Rohtak BCA Lab Portal Server running at: http://localhost:${PORT}`);
-    console.log(`📡  Multi-Server Process Orchestrator Ready`);
-    console.log(`⚡  Live API Routes: /api/programs, /api/servers`);
-    console.log(`================================================================`);
-});
+if (require.main === module) {
+    app.listen(PORT, () => {
+        console.log(`================================================================`);
+        console.log(`🏛️  MDU Rohtak BCA Lab Portal Server running at: http://localhost:${PORT}`);
+        console.log(`📡  Multi-Server Process Orchestrator Ready`);
+        console.log(`⚡  Live API Routes: /api/programs, /api/servers`);
+        console.log(`================================================================`);
+    });
+}
+
+module.exports = app;
