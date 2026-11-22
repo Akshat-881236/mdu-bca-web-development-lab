@@ -183,19 +183,26 @@ PROGRAMS_METADATA.forEach(prog => {
 // Multi-Server Process Orchestrator State & Vercel Service Bindings
 const subServers = {};
 
-// Map program IDs to Vercel service binding environment variables
+// Map program IDs to Vercel service binding environment variables (supports numeric and spelled-out names)
 const SERVICE_ENV_MAP = {
-    "Program-2": "PROGRAM_2_URL",
-    "Program-5": "PROGRAM_5_URL",
-    "Program-8": "PROGRAM_8_URL",
-    "Program-9": "PROGRAM_9_URL",
-    "Program-10": "PROGRAM_10_URL"
+    "Program-2": ["PROGRAM_2_URL", "PROGRAM_TWO_URL"],
+    "Program-5": ["PROGRAM_5_URL", "PROGRAM_FIVE_URL"],
+    "Program-8": ["PROGRAM_8_URL", "PROGRAM_EIGHT_URL"],
+    "Program-9": ["PROGRAM_9_URL", "PROGRAM_NINE_URL"],
+    "Program-10": ["PROGRAM_10_URL", "PROGRAM_TEN_URL"]
 };
+
+function getBoundServiceUrl(progId) {
+    const envVars = SERVICE_ENV_MAP[progId] || [];
+    for (const v of envVars) {
+        if (process.env[v]) return process.env[v];
+    }
+    return null;
+}
 
 // Initialize sub-server tracker with Vercel Service Binding awareness
 PROGRAMS_METADATA.filter(p => p.hasServer).forEach(p => {
-    const envVar = SERVICE_ENV_MAP[p.id];
-    const boundUrl = envVar ? process.env[envVar] : null;
+    const boundUrl = getBoundServiceUrl(p.id);
     const isBound = Boolean(boundUrl);
 
     subServers[p.id] = {
@@ -230,10 +237,10 @@ function startSubServer(progId) {
         if (!s) return reject(new Error("Unknown server program ID: " + progId));
         
         // If bound to a Vercel internal service, it is managed by Vercel
-        const envVar = SERVICE_ENV_MAP[progId];
-        if (s.isVercelService || (envVar && process.env[envVar])) {
-            const boundUrl = process.env[envVar];
+        const boundUrl = getBoundServiceUrl(progId);
+        if (s.isVercelService || boundUrl) {
             s.status = "running";
+            s.isVercelService = true;
             s.liveUrl = boundUrl || s.liveUrl;
             appendLog(progId, `Connected to Vercel internal service binding at ${s.liveUrl}`);
             return resolve({ message: "Service is managed by Vercel Services (always online)", server: s });

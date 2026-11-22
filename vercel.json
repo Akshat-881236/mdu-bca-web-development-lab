@@ -7,53 +7,53 @@
       "bindings": [
         {
           "type": "service",
-          "service": "program-2",
+          "service": "program-two",
           "format": "url",
-          "env": "PROGRAM_2_URL"
+          "env": "PROGRAM_TWO_URL"
         },
         {
           "type": "service",
-          "service": "program-5",
+          "service": "program-five",
           "format": "url",
-          "env": "PROGRAM_5_URL"
+          "env": "PROGRAM_FIVE_URL"
         },
         {
           "type": "service",
-          "service": "program-8",
+          "service": "program-eight",
           "format": "url",
-          "env": "PROGRAM_8_URL"
+          "env": "PROGRAM_EIGHT_URL"
         },
         {
           "type": "service",
-          "service": "program-9",
+          "service": "program-nine",
           "format": "url",
-          "env": "PROGRAM_9_URL"
+          "env": "PROGRAM_NINE_URL"
         },
         {
           "type": "service",
-          "service": "program-10",
+          "service": "program-ten",
           "format": "url",
-          "env": "PROGRAM_10_URL"
+          "env": "PROGRAM_TEN_URL"
         }
       ]
     },
-    "program-2": {
+    "program-two": {
       "root": "Program-2",
       "framework": "express"
     },
-    "program-5": {
+    "program-five": {
       "root": "Program-5",
       "framework": "express"
     },
-    "program-8": {
+    "program-eight": {
       "root": "Program-8",
       "framework": "express"
     },
-    "program-9": {
+    "program-nine": {
       "root": "Program-9",
       "framework": "express"
     },
-    "program-10": {
+    "program-ten": {
       "root": "Program-10",
       "framework": "express"
     }
