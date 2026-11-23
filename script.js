@@ -501,6 +501,27 @@ async function buildExperimentLiveUrl(progId, manifestData) {
     return URL.createObjectURL(blob);
 }
 
+// Global Dependency Markdown & Mermaid Renderer
+function renderMarkdown(rawMarkdown) {
+    if (!rawMarkdown || rawMarkdown.trim().length === 0) {
+        return '<p style="color: var(--text-muted); font-style: italic; padding: 20px;">No documentation content available.</p>';
+    }
+    if (!window.marked) return rawMarkdown;
+
+    const renderer = new window.marked.Renderer();
+    renderer.code = function(arg1, arg2) {
+        const code = typeof arg1 === "object" ? (arg1.text || "") : String(arg1 || "");
+        const lang = typeof arg1 === "object" ? (arg1.lang || "") : String(arg2 || "");
+        if (lang.trim().toLowerCase() === "mermaid") {
+            return `<pre class="mermaid">${code}</pre>`;
+        }
+        const langDisplay = lang.trim().toLowerCase() || "plaintext";
+        return `<pre class="language-${langDisplay}"><code class="language-${langDisplay}">${code}</code></pre>`;
+    };
+
+    return window.marked.parse(rawMarkdown, { renderer, gfm: true, breaks: false });
+}
+
 // Main React App Component
 function App() {
     const initialParams = useMemo(() => getUrlParams(), []);
@@ -614,9 +635,13 @@ function App() {
     const [copySuccess, setCopySuccess] = useState(false);
     const [scrollPercent, setScrollPercent] = useState(0);
 
+    const [mdViewMode, setMdViewMode] = useState("preview"); // "preview" | "code"
+
     const logBoxRef = useRef(null);
     const codeRef = useRef(null);
     const viewportRef = useRef(null);
+    const readmeRef = useRef(null);
+    const codeReadmeRef = useRef(null);
 
     // Click outside listener for Header Projects Dropdown
     useEffect(() => {
@@ -1033,14 +1058,26 @@ function App() {
         return () => clearTimeout(timer);
     }, [searchQuery]);
 
-    // Re-highlight with Prism.js on code or tab change
+    // Render Mermaid diagrams & highlight code with Prism on tab or content change
     useEffect(() => {
-        if (window.Prism && (activeTab === "code" || activeTab === "readme") && !isEditing) {
+        if (activeTab === "readme" || activeTab === "code") {
             setTimeout(() => {
-                try { window.Prism.highlightAll(); } catch (e) {}
-            }, 50);
+                if (window.mermaid) {
+                    try {
+                        window.mermaid.initialize({
+                            startOnLoad: false,
+                            theme: theme === "academic-light" ? "default" : "dark",
+                            securityLevel: "loose"
+                        });
+                        window.mermaid.run({ querySelector: ".mermaid" });
+                    } catch (e) {}
+                }
+                if (window.Prism && !isEditing) {
+                    try { window.Prism.highlightAll(); } catch (e) {}
+                }
+            }, 60);
         }
-    }, [fileContent, activeTab, isEditing, programDetail]);
+    }, [fileContent, activeTab, isEditing, programDetail, selectedId, theme, activeFile, mdViewMode]);
 
     // Current Selected Objects
     const currentProg = useMemo(() => {
@@ -1050,6 +1087,12 @@ function App() {
     const currentSubServer = useMemo(() => {
         return subServers.find(s => s.id === selectedId) || null;
     }, [subServers, selectedId]);
+
+    const isCurrentFileMarkdown = useMemo(() => {
+        if (!activeFile) return false;
+        const name = activeFile.toLowerCase();
+        return name === "readme.md" || name.endsWith(".md");
+    }, [activeFile]);
 
     const isCurrentFileEditable = useMemo(() => {
         return isFileEditable(activeFile, currentProg && currentProg.hasServer);
@@ -1575,16 +1618,17 @@ function App() {
         );
     };
 
-    // 5. Tab Content: Readme Viewer
+    // 5. Tab Content: Readme Viewer & GitHub Markdown Preview
     const renderReadmeTab = () => {
         if (loadingDetail) {
             return h("div", { style: { padding: "40px", textAlign: "center" } }, "Loading documentation...");
         }
 
         const rawMarkdown = programDetail && programDetail.readme ? programDetail.readme : "# No README.md available.";
-        const renderedHtml = window.marked ? window.marked.parse(rawMarkdown) : rawMarkdown;
+        const renderedHtml = renderMarkdown(rawMarkdown);
 
         return h("div", {
+            ref: readmeRef,
             className: "readme-viewer",
             dangerouslySetInnerHTML: { __html: renderedHtml }
         });
@@ -1617,6 +1661,31 @@ function App() {
                     })
                 ),
                 h("div", { className: "code-actions" },
+                    // GitHub Markdown Preview / Raw Code Toggle (Only for .md files)
+                    isCurrentFileMarkdown && h("div", { className: "md-view-toggle-group" },
+                        h("button", {
+                            type: "button",
+                            className: `btn-md-toggle ${mdViewMode === "preview" ? "active" : ""}`,
+                            onClick: () => {
+                                setMdViewMode("preview");
+                                setIsEditing(false);
+                            },
+                            title: "Preview Formatted GitHub Markdown with Mermaid Diagrams"
+                        },
+                            h("i", { className: "bi bi-eye" }),
+                            h("span", { className: "desktop-only-inline" }, " Preview")
+                        ),
+                        h("button", {
+                            type: "button",
+                            className: `btn-md-toggle ${mdViewMode === "code" ? "active" : ""}`,
+                            onClick: () => setMdViewMode("code"),
+                            title: "View Raw Markdown Source Code"
+                        },
+                            h("i", { className: "bi bi-code-slash" }),
+                            h("span", { className: "desktop-only-inline" }, " Code")
+                        )
+                    ),
+
                     // GitHub Source Link
                     h("a", {
                         href: currentGithubFileUrl,
@@ -1728,7 +1797,7 @@ function App() {
                 }
             }, editorMessage.text),
 
-            // Main Editor or Prism.js Viewer Pane
+            // Main Editor or Prism.js Viewer Pane or GitHub Markdown Preview
             isEditing ? h("div", { className: "code-editor-pane" },
                 h("textarea", {
                     className: "editor-textarea",
@@ -1737,7 +1806,13 @@ function App() {
                     spellCheck: "false",
                     "aria-label": `Edit content of ${activeFile}`
                 })
-            ) : h("div", { className: "code-scroll-pane" },
+            ) : (isCurrentFileMarkdown && mdViewMode === "preview") ? h("div", {
+                ref: codeReadmeRef,
+                className: "readme-viewer code-readme-preview",
+                dangerouslySetInnerHTML: {
+                    __html: renderMarkdown(fileContent)
+                }
+            }) : h("div", { className: "code-scroll-pane" },
                 loadingFile
                     ? h("div", { style: { padding: "30px", color: "var(--text-muted)" } }, "Streaming file content...")
                     : h("pre", { className: `line-numbers language-${prismLang}` },

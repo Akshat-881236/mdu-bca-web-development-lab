@@ -1122,57 +1122,356 @@ body {
     min-height: auto;
 }
 
-/* ---------------- Tab 1: Readme Viewer ---------------- */
+/* ---------------- Tab 1: Readme Viewer & GitHub Markdown Preview ---------------- */
 .readme-viewer {
     background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
-    padding: 30px;
-    max-width: 950px;
+    padding: 36px 40px;
+    max-width: 1020px;
     margin: 0 auto;
     width: 100%;
     box-shadow: var(--shadow);
+    color: var(--text-primary);
+    word-wrap: break-word;
+    line-height: 1.65;
 }
 
-.readme-viewer h1 { font-size: 1.75rem; margin-bottom: 16px; border-bottom: 2px solid var(--border); padding-bottom: 8px; }
-.readme-viewer h2 { font-size: 1.35rem; margin: 24px 0 12px; color: var(--primary); }
-.readme-viewer h3 { font-size: 1.1rem; margin: 18px 0 8px; }
-.readme-viewer p { margin-bottom: 14px; font-size: 0.92rem; line-height: 1.7; color: var(--text-primary); }
-.readme-viewer ul, .readme-viewer ol { margin: 0 0 16px 22px; font-size: 0.92rem; }
-.readme-viewer li { margin-bottom: 6px; }
+/* In Code Explorer preview mode */
+.readme-viewer.code-readme-preview {
+    max-width: 100%;
+    margin: 0;
+    border: none;
+    border-radius: 0;
+    background: var(--bg-card);
+    padding: 24px 30px;
+    box-shadow: none;
+    overflow-y: auto;
+    max-height: calc(100vh - 280px);
+}
 
-.readme-viewer table {
+.readme-viewer h1 {
+    font-size: 1.85rem;
+    font-weight: 800;
+    margin: 0 0 18px 0;
+    border-bottom: 2px solid var(--border);
+    padding-bottom: 10px;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+}
+
+.readme-viewer h2 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin: 32px 0 16px;
+    color: var(--primary);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 8px;
+    letter-spacing: -0.01em;
+}
+
+.readme-viewer h3 {
+    font-size: 1.18rem;
+    font-weight: 600;
+    margin: 24px 0 12px;
+    color: var(--text-primary);
+}
+
+.readme-viewer h4 {
+    font-size: 1.02rem;
+    font-weight: 600;
+    margin: 18px 0 10px;
+    color: var(--text-secondary);
+}
+
+.readme-viewer p {
+    margin-bottom: 16px;
+    font-size: 0.94rem;
+    line-height: 1.7;
+    color: var(--text-primary);
+}
+
+.readme-viewer ul, .readme-viewer ol {
+    margin: 0 0 18px 24px;
+    font-size: 0.94rem;
+    line-height: 1.7;
+}
+
+.readme-viewer li {
+    margin-bottom: 6px;
+}
+
+.readme-viewer li.github-task-item {
+    list-style: none;
+    margin-left: -20px;
+    display: flex;
+    align-items: baseline;
+}
+
+.readme-viewer hr {
+    height: 1px;
+    border: none;
+    background: var(--border);
+    margin: 32px 0;
+}
+
+/* GitHub Alert Callouts */
+.markdown-alert {
+    padding: 14px 18px;
+    margin: 20px 0;
+    border-left: 4px solid;
+    border-radius: 0 8px 8px 0;
+    background: var(--bg-surface);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.markdown-alert-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+    text-transform: capitalize;
+}
+
+.markdown-alert-content {
+    font-size: 0.92rem;
+    line-height: 1.6;
+    color: var(--text-primary);
+}
+
+.markdown-alert-content p:last-child {
+    margin-bottom: 0;
+}
+
+.markdown-alert-note {
+    border-left-color: #2f81f7;
+    background: rgba(47, 129, 247, 0.08);
+}
+.markdown-alert-note .markdown-alert-title {
+    color: #58a6ff;
+}
+
+.markdown-alert-tip {
+    border-left-color: #238636;
+    background: rgba(46, 160, 67, 0.08);
+}
+.markdown-alert-tip .markdown-alert-title {
+    color: #3fb950;
+}
+
+.markdown-alert-important {
+    border-left-color: #8957e5;
+    background: rgba(137, 87, 229, 0.08);
+}
+.markdown-alert-important .markdown-alert-title {
+    color: #a371f7;
+}
+
+.markdown-alert-warning {
+    border-left-color: #9e6a03;
+    background: rgba(210, 153, 34, 0.08);
+}
+.markdown-alert-warning .markdown-alert-title {
+    color: #d29922;
+}
+
+.markdown-alert-caution {
+    border-left-color: #da3633;
+    background: rgba(248, 81, 73, 0.08);
+}
+.markdown-alert-caution .markdown-alert-title {
+    color: #f85149;
+}
+
+/* GitHub Tables */
+.table-responsive-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    margin: 22px 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    -webkit-overflow-scrolling: touch;
+}
+
+.github-markdown-table {
     width: 100%;
     border-collapse: collapse;
-    margin: 20px 0;
-    font-size: 0.88rem;
-    overflow-x: auto;
-    display: block;
-}
-.readme-viewer th, .readme-viewer td {
-    padding: 10px 14px;
-    border: 1px solid var(--border);
+    font-size: 0.9rem;
     text-align: left;
 }
-.readme-viewer th { background: var(--bg-surface); font-weight: 700; }
 
-.readme-viewer code {
+.github-markdown-table th, .github-markdown-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+}
+
+.github-markdown-table th:last-child, .github-markdown-table td:last-child {
+    border-right: none;
+}
+
+.github-markdown-table tr:last-child td {
+    border-bottom: none;
+}
+
+.github-markdown-table th {
+    background: var(--bg-surface);
+    font-weight: 700;
+    color: var(--text-primary);
+    border-bottom: 2px solid var(--border);
+}
+
+.github-markdown-table tbody tr:nth-child(even) {
+    background: rgba(255, 255, 255, 0.015);
+}
+
+.github-markdown-table tbody tr:hover {
+    background: rgba(56, 189, 248, 0.04);
+}
+
+/* GitHub Inline Code */
+.readme-viewer code:not([class*="language-"]) {
     font-family: var(--font-mono);
     background: var(--bg-surface);
-    padding: 2px 6px;
+    padding: 2px 7px;
     border-radius: 4px;
-    font-size: 0.85rem;
+    font-size: 0.86rem;
     color: var(--accent);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Standard GitHub Code Block */
+.github-code-block {
+    position: relative;
+    margin: 20px 0;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg-surface);
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+}
+
+.github-code-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 7px 14px;
+    background: rgba(0, 0, 0, 0.22);
+    border-bottom: 1px solid var(--border);
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+}
+
+.github-code-lang {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    text-transform: lowercase;
+}
+
+.btn-copy-code-block {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    padding: 2px 9px;
+    border-radius: 4px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.btn-copy-code-block:hover {
+    background: var(--bg-surface);
+    color: var(--primary);
+    border-color: var(--primary);
+}
+
+.github-code-block pre {
+    margin: 0;
+    padding: 16px 18px;
+    background: transparent !important;
+    border: none;
+    border-radius: 0;
+    overflow-x: auto;
+    font-size: 0.88rem;
+    line-height: 1.6;
 }
 
 .readme-viewer blockquote {
     border-left: 4px solid var(--primary);
     background: var(--bg-surface);
-    padding: 12px 18px;
+    padding: 14px 20px;
     border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-    margin: 16px 0;
+    margin: 20px 0;
     font-style: italic;
+    color: var(--text-secondary);
 }
+
+/* ---------------- Mermaid Diagram Global Component ---------------- */
+.mermaid {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 24px;
+    margin: 24px 0;
+    overflow-x: auto;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    text-align: center;
+}
+
+.mermaid svg {
+    max-width: 100% !important;
+    height: auto !important;
+    display: block;
+    margin: 0 auto;
+}
+
+/* Code Explorer Markdown Preview Toggle */
+.md-view-toggle-group {
+    display: inline-flex;
+    align-items: center;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 2px;
+    margin-right: 8px;
+}
+
+.btn-md-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 9px;
+    font-size: 0.74rem;
+    font-weight: 600;
+    border-radius: 4px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.btn-md-toggle:hover {
+    color: var(--text-primary);
+}
+
+.btn-md-toggle.active {
+    background: var(--primary);
+    color: #000;
+}
+
 
 /* ---------------- Tab 2: Code Explorer ---------------- */
 .code-explorer-container {
