@@ -525,10 +525,74 @@ function App() {
     const [experimentBlobUrl, setExperimentBlobUrl] = useState(null);
     const [runnerMode, setRunnerMode] = useState("original"); // "original" | "experiment"
 
-    // Header Projects Dropdown State
+    // Header Projects Dropdown State & Timers
     const [isProjectsOpen, setIsProjectsOpen] = useState(false);
-    const projectsTimerRef = useRef(null);
+    const [isProjectsClickLocked, setIsProjectsClickLocked] = useState(false);
+    const projectsClickTimerRef = useRef(null);
+    const projectsHoverTimerRef = useRef(null);
     const projectsRef = useRef(null);
+
+    const closeProjectsMenu = () => {
+        if (projectsClickTimerRef.current) {
+            clearTimeout(projectsClickTimerRef.current);
+            projectsClickTimerRef.current = null;
+        }
+        if (projectsHoverTimerRef.current) {
+            clearTimeout(projectsHoverTimerRef.current);
+            projectsHoverTimerRef.current = null;
+        }
+        setIsProjectsClickLocked(false);
+        setIsProjectsOpen(false);
+    };
+
+    const handleProjectsMouseEnter = () => {
+        // Cancel any pending hover close debounce
+        if (projectsHoverTimerRef.current) {
+            clearTimeout(projectsHoverTimerRef.current);
+            projectsHoverTimerRef.current = null;
+        }
+        // If click-locked, keep it open and pause the auto-close timer while user is hovering over card/icon
+        if (projectsClickTimerRef.current) {
+            clearTimeout(projectsClickTimerRef.current);
+            projectsClickTimerRef.current = null;
+        }
+        setIsProjectsOpen(true);
+    };
+
+    const handleProjectsMouseLeave = () => {
+        // If locked by click, resume the 8-second auto-close countdown so user has full time after moving away
+        if (isProjectsClickLocked) {
+            if (projectsClickTimerRef.current) clearTimeout(projectsClickTimerRef.current);
+            projectsClickTimerRef.current = setTimeout(() => {
+                closeProjectsMenu();
+            }, 8000);
+            return;
+        }
+
+        // If not click-locked (pure hover mode):
+        // Give a generous 400ms debounce so user moving between button and card or deciding what to click never loses the card
+        if (projectsHoverTimerRef.current) clearTimeout(projectsHoverTimerRef.current);
+        projectsHoverTimerRef.current = setTimeout(() => {
+            closeProjectsMenu();
+        }, 400);
+    };
+
+    const handleProjectsClick = (e) => {
+        e.stopPropagation();
+        if (isProjectsOpen && isProjectsClickLocked) {
+            // Clicking again toggles it closed
+            closeProjectsMenu();
+        } else {
+            // Click activates the 8-second lock
+            if (projectsHoverTimerRef.current) clearTimeout(projectsHoverTimerRef.current);
+            if (projectsClickTimerRef.current) clearTimeout(projectsClickTimerRef.current);
+            setIsProjectsClickLocked(true);
+            setIsProjectsOpen(true);
+            projectsClickTimerRef.current = setTimeout(() => {
+                closeProjectsMenu();
+            }, 8000);
+        }
+    };
 
     // Search & Line-by-Line Code Search
     const [searchQuery, setSearchQuery] = useState(initialParams.q || "");
@@ -558,17 +622,14 @@ function App() {
     useEffect(() => {
         const handleGlobalClick = (e) => {
             if (projectsRef.current && !projectsRef.current.contains(e.target)) {
-                if (projectsTimerRef.current) {
-                    clearTimeout(projectsTimerRef.current);
-                    projectsTimerRef.current = null;
-                }
-                setIsProjectsOpen(false);
+                closeProjectsMenu();
             }
         };
         document.addEventListener("click", handleGlobalClick);
         return () => {
             document.removeEventListener("click", handleGlobalClick);
-            if (projectsTimerRef.current) clearTimeout(projectsTimerRef.current);
+            if (projectsClickTimerRef.current) clearTimeout(projectsClickTimerRef.current);
+            if (projectsHoverTimerRef.current) clearTimeout(projectsHoverTimerRef.current);
         };
     }, []);
 
@@ -1217,36 +1278,12 @@ function App() {
                 h("div", {
                     className: "projects-dropdown-wrapper",
                     ref: projectsRef,
-                    onMouseEnter: () => {
-                        if (projectsTimerRef.current) {
-                            clearTimeout(projectsTimerRef.current);
-                            projectsTimerRef.current = null;
-                        }
-                        setIsProjectsOpen(true);
-                    },
-                    onMouseLeave: () => {
-                        if (projectsTimerRef.current) {
-                            clearTimeout(projectsTimerRef.current);
-                            projectsTimerRef.current = null;
-                        }
-                        setIsProjectsOpen(false);
-                    }
+                    onMouseEnter: handleProjectsMouseEnter,
+                    onMouseLeave: handleProjectsMouseLeave
                 },
                     h("button", {
                         className: `projects-toggle-btn ${isProjectsOpen ? "active" : ""}`,
-                        onClick: (e) => {
-                            e.stopPropagation();
-                            if (isProjectsOpen) {
-                                if (projectsTimerRef.current) clearTimeout(projectsTimerRef.current);
-                                setIsProjectsOpen(false);
-                            } else {
-                                setIsProjectsOpen(true);
-                                if (projectsTimerRef.current) clearTimeout(projectsTimerRef.current);
-                                projectsTimerRef.current = setTimeout(() => {
-                                    setIsProjectsOpen(false);
-                                }, 8000);
-                            }
-                        },
+                        onClick: handleProjectsClick,
                         "aria-label": "Explore Related Projects & Portals",
                         title: "Related Projects & Portals (Click to keep open 8s)"
                     },
@@ -1257,6 +1294,8 @@ function App() {
 
                     isProjectsOpen && h("div", {
                         className: "projects-menu-card",
+                        onMouseEnter: handleProjectsMouseEnter,
+                        onMouseLeave: handleProjectsMouseLeave,
                         onClick: (e) => e.stopPropagation()
                     },
                         h("div", { className: "projects-card-header" },
