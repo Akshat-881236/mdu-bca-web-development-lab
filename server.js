@@ -613,15 +613,45 @@ app.get("/api/programs/:id", (req, res) => {
         collectFiles(tree);
     }
 
-    // Serverless Fallback from Embedded Manifest
-    if ((!readmeContent || fileList.length === 0) && embeddedManifest && embeddedManifest[progId]) {
-        if (!readmeContent && embeddedManifest[progId].readme) {
-            readmeContent = embeddedManifest[progId].readme;
+    // Embedded Manifest Reconcile & Serverless Fallback (Guarantees README.md and all program files appear)
+    if (embeddedManifest && embeddedManifest[progId]) {
+        const manifestProg = embeddedManifest[progId];
+        if ((!readmeContent || readmeContent.trim().length === 0) && manifestProg.readme) {
+            readmeContent = manifestProg.readme;
         }
-        if (fileList.length === 0 && embeddedManifest[progId].files) {
-            fileList = embeddedManifest[progId].files;
-            tree = embeddedManifest[progId].tree || [];
+
+        if (manifestProg.files && Array.isArray(manifestProg.files)) {
+            if (fileList.length === 0) {
+                fileList = [...manifestProg.files];
+                tree = manifestProg.tree || [];
+            } else {
+                // Merge files from manifest so missing files (README.md, style.css, script.js, etc.) are never omitted
+                const existingPaths = new Set(fileList.map(f => f.path.replace(/\\/g, "/")));
+                manifestProg.files.forEach(mf => {
+                    const normPath = mf.path.replace(/\\/g, "/");
+                    if (!existingPaths.has(normPath)) {
+                        fileList.push(mf);
+                        existingPaths.add(normPath);
+                    }
+                });
+
+                // If manifest has a richer tree structure than disk, use manifest tree
+                if (manifestProg.tree && manifestProg.files.length > tree.length) {
+                    tree = manifestProg.tree;
+                }
+            }
         }
+    }
+
+    // Safety: Ensure README.md is always in fileList for every program
+    if (!fileList.some(f => f.name.toLowerCase() === "readme.md")) {
+        fileList.unshift({
+            name: "README.md",
+            path: "README.md",
+            type: "file",
+            size: readmeContent ? Buffer.byteLength(readmeContent, "utf8") : 2048,
+            ext: ".md"
+        });
     }
 
     if (!fs.existsSync(progDir) && (!embeddedManifest || !embeddedManifest[progId])) {
@@ -682,6 +712,16 @@ app.get("/api/programs/:id/file", (req, res) => {
     }
 
     if (!fs.existsSync(targetFile)) {
+        // Fallback for README.md if stored in manifest readme field
+        if (filePath.toLowerCase() === "readme.md" && embeddedManifest && embeddedManifest[progId] && embeddedManifest[progId].readme) {
+            return res.status(200).json({
+                success: true,
+                path: filePath,
+                ext: "md",
+                content: embeddedManifest[progId].readme
+            });
+        }
+
         // Fallback from embedded manifest for serverless execution
         if (embeddedManifest && embeddedManifest[progId] && embeddedManifest[progId].fileContents) {
             const contents = embeddedManifest[progId].fileContents;
